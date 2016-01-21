@@ -378,7 +378,11 @@ public class MaplePacketCreator {
         mplew.writeShort(equip.getHands()); // hands
         mplew.writeShort(equip.getSpeed()); // speed
         mplew.writeShort(equip.getJump()); // jump
-        mplew.writeMapleAsciiString(equip.getOwner()); // owner name
+        if (equip.getOwner() == "") {
+            mplew.writeMapleAsciiString(equip.getLines()); // Potential
+        } else {
+            mplew.writeMapleAsciiString(equip.getOwner()); // Owner
+        }
         mplew.writeShort(equip.getFlag()); //Item Flags
 
         if (isCash) {
@@ -391,7 +395,7 @@ public class MaplePacketCreator {
             mplew.writeShort(0);
             mplew.writeShort(equip.getItemExp()); //Works pretty weird :s
             mplew.writeInt(equip.getVicious()); //WTF NEXON ARE YOU SERIOUS?
-            mplew.writeLong(0);
+            mplew.write(new byte[8]);
         }
         mplew.write(new byte[]{0, (byte) 0x40, (byte) 0xE0, (byte) 0xFD, (byte) 0x3B, (byte) 0x37, (byte) 0x4F, 1});
         mplew.writeInt(-1);
@@ -484,7 +488,7 @@ public class MaplePacketCreator {
         mplew.write(new byte[]{(byte) 0x40, (byte) 0xE0, (byte) 0xFD, (byte) 0x3B, (byte) 0x37, (byte) 0x4F, 1});
         mplew.writeLong(getKoreanTimestamp(System.currentTimeMillis()));
         mplew.writeInt(0);
-        mplew.writeMapleAsciiString("http://maplefags.com");
+        mplew.writeMapleAsciiString("http://google.com/");
         return mplew.getPacket();
     }
 
@@ -587,7 +591,7 @@ public class MaplePacketCreator {
         mplew.writeShort(reason);//using other types then stated above = CRASH
         return mplew.getPacket();
     }
-    
+
     public static MaplePacket sendPolice(int reason, String reasoning, int duration) {
         MaplePacketLittleEndianWriter mplew = new MaplePacketLittleEndianWriter();
         mplew.writeShort(SendOpcode.GM_POLICE.getValue());
@@ -651,7 +655,6 @@ public class MaplePacketCreator {
         mplew.writeLong(0); //creation time
         mplew.writeInt(0);
         mplew.writeShort(2);//PIN
-
         return mplew.getPacket();
     }
 
@@ -2396,9 +2399,12 @@ public class MaplePacketCreator {
             mplew.writeInt(sn);
         }
         mplew.writeInt(chr.getMonsterBook().getBookLevel());
-        mplew.writeInt(chr.getMonsterBook().getNormalCard());
-        mplew.writeInt(chr.getMonsterBook().getSpecialCard());
-        mplew.writeInt(chr.getMonsterBook().getTotalCards());
+        //mplew.writeInt(chr.getMonsterBook().getNormalCard());
+        mplew.writeInt(chr.getOccupationLevel());
+        //mplew.writeInt(chr.getMonsterBook().getSpecialCard());
+        mplew.writeInt(chr.shardCount());
+        //mplew.writeInt(chr.getMonsterBook().getTotalCards());
+        mplew.writeInt(chr.getReborns());
         mplew.writeInt(chr.getMonsterBookCover() > 0 ? MapleItemInformationProvider.getInstance().getCardMobId(chr.getMonsterBookCover()) : 0);
         IItem medal = chr.getInventory(MapleInventoryType.EQUIPPED).getItem((byte) -49);
         if (medal != null) {
@@ -3531,20 +3537,20 @@ public class MaplePacketCreator {
         return mplew.getPacket();
     }
 
-    public static MaplePacket damageMonster(int oid, int damage) {
+    public static MaplePacket damageMonster(int oid, int damage, String charName) {
         MaplePacketLittleEndianWriter mplew = new MaplePacketLittleEndianWriter();
         mplew.writeShort(SendOpcode.DAMAGE_MONSTER.getValue());
         mplew.writeInt(oid);
         mplew.write(0);
         mplew.writeInt(damage);
-        mplew.write(0);
+        mplew.write(0); //whats with the 0's?
         mplew.write(0);
         mplew.write(0);
         return mplew.getPacket();
     }
 
     public static MaplePacket healMonster(int oid, int heal) {
-        return damageMonster(oid, -heal);
+        return damageMonster(oid, -heal, "");
     }
 
     public static MaplePacket updateBuddylist(Collection<BuddylistEntry> buddylist) {
@@ -5167,8 +5173,8 @@ public class MaplePacketCreator {
             mplew.writeInt(notes.getInt("id"));
             mplew.writeMapleAsciiString(notes.getString("from") + " ");//Stupid nexon forgot space lol
             mplew.writeMapleAsciiString(notes.getString("message"));
-            mplew.writeLong(getKoreanTimestamp(notes.getLong("timestamp")));
-            mplew.write(notes.getByte("fame"));//FAME :D
+            mplew.writeLong(getKoreanTimestamp(notes.getLong("timestamp"))); //lol get korean time stamp. racist.
+            mplew.write(notes.getByte("fame")); 
             notes.next();
         }
         return mplew.getPacket();

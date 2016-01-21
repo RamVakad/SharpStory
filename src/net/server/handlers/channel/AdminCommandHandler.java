@@ -81,7 +81,8 @@ public final class AdminCommandHandler extends AbstractMaplePacketHandler {
                     String ip = target.getClient().getSession().getRemoteAddress().toString().split(":")[0];
                     reason += readableTargetName + " (IP: " + ip + ")";
                     target.ban(reason);
-                    target.sendPolice("You have been blocked by #b" + c.getPlayer().getName() + " #kfor the HACK reason.");
+                    target.getClient().disconnect();
+                    //target.sendPolice("You have been blocked by #b" + c.getPlayer().getName() + " #kfor the HACK reason.");
                     c.announce(MaplePacketCreator.getGMEffect(4, (byte) 0));
                 } else if (MapleCharacter.ban(victim, reason, false)) {
                     c.announce(MaplePacketCreator.getGMEffect(4, (byte) 0));
@@ -90,6 +91,8 @@ public final class AdminCommandHandler extends AbstractMaplePacketHandler {
                 }
                 break;
             case 0x04: // Block
+                c.getPlayer().message("Use !ban <player>, works offline/online.");
+                /*
                 victim = slea.readMapleAsciiString();
                 slea.readByte(); //type
                 int duration = slea.readInt();
@@ -111,6 +114,7 @@ public final class AdminCommandHandler extends AbstractMaplePacketHandler {
                 } else {
                     c.announce(MaplePacketCreator.getGMEffect(6, (byte) 1));
                 }
+                */
                 break;
             case 0x10: // /h, information by vana
                 StringBuilder sb = new StringBuilder("USERS ON THIS MAP: ");

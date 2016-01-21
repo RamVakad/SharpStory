@@ -298,8 +298,8 @@ public class MapleMap {
 
     private void incrementRunningOid() {
         runningOid++;
-        if (runningOid >= 30000) {
-            runningOid = 1000;//Lol, like there are monsters with the same oid NO
+        if (runningOid >= 30000) { //That's how we do it son!
+            runningOid = 1000;// Cuz ram is pro
         }
         objectRLock.lock();
         try {
@@ -309,7 +309,7 @@ public class MapleMap {
         } finally {
             objectRLock.unlock();
         }
-        throw new RuntimeException("Out of OIDs on map " + mapid + " (channel: " + channel + ")");
+        throw new RuntimeException("Out of OIDs on map " + mapid + " (channel: " + channel + ")"+" --- You're so pro.");
     }
 
     public void removeMapObject(int num) {
@@ -380,9 +380,22 @@ public class MapleMap {
                 } else {
                     pos.x = (int) (mobpos + ((d % 2 == 0) ? (25 * (d + 1) / 2) : -(25 * (d / 2))));
                 }
-                if (de.itemId == 0) { // meso
-                    int mesos = Randomizer.nextInt(de.Maximum - de.Minimum) + de.Minimum;
 
+                //Start Dynamic meso dropping ?? LoL, this is shit and does not make sense, but w/e
+                int moblvl = mob.getLevel();
+                moblvl = moblvl / 10;
+                if (moblvl < 1) {
+                    moblvl = 1;
+                }
+                int meso = getMesos(moblvl);
+                //if (chr.getBuffedValue(MapleBuffStat.MESOUP) != null) {
+                  //  meso = (int) (meso * chr.getBuffedValue(MapleBuffStat.MESOUP).doubleValue() / 100.0);
+                //} MESO UP DISABLEDDD 
+                spawnMesoDrop(meso * chr.getMesoRate(), calcDropPos(pos, mob.getPosition()), mob, chr, false, droptype);
+                //End Random meso dropping //Correction - Dynamic. Sounds cooler
+
+                if (de.itemId == 0) { // meso //but sharpstory don't need this cause we got Dynamic drops <<shit.
+                    int mesos = Randomizer.nextInt(de.Maximum - de.Minimum) + de.Minimum;
                     if (mesos > 0) {
                         if (chr.getBuffedValue(MapleBuffStat.MESOUP) != null) {
                             mesos = (int) (mesos * chr.getBuffedValue(MapleBuffStat.MESOUP).doubleValue() / 100.0);
@@ -409,8 +422,12 @@ public class MapleMap {
                 } else {
                     pos.x = (int) (mobpos + ((d % 2 == 0) ? (25 * (d + 1) / 2) : -(25 * (d / 2))));
                 }
-                if (de.itemId == 0) {
-                    //chr.getCashShop().gainCash(1, 80);
+                if (de.itemId == 0) { //Yes, Mesos
+                    int mesos = Randomizer.nextInt(de.Maximum - de.Minimum) + de.Minimum;
+                    if (chr.getBuffedValue(MapleBuffStat.MESOUP) != null) {
+                        mesos = (int) (mesos * chr.getBuffedValue(MapleBuffStat.MESOUP).doubleValue() / 100.0);
+                    }
+                    spawnMesoDrop(mesos * chr.getMesoRate(), calcDropPos(pos, mob.getPosition()), mob, chr, false, droptype);
                 } else {
                     if (ItemConstants.getInventoryType(de.itemId) == MapleInventoryType.EQUIP) {
                         idrop = ii.randomizeStats((Equip) ii.getEquipById(de.itemId));
@@ -487,8 +504,25 @@ public class MapleMap {
         }
         return count;
     }
+    
+    public MapleMapObject getNPCObject(int npcid) {
+        for (MapleMapObject obj : mapobjects.values()) {
+                if (obj.getType() == MapleMapObjectType.NPC) {
+                    if (((MapleNPC) obj).getId() == npcid) {
+                        return obj;
+                    }
+                }
+            }
+        return null;
+    }
 
-    public boolean damageMonster(final MapleCharacter chr, final MapleMonster monster, final int damage) {
+    public boolean damageMonster(final MapleCharacter chr, final MapleMonster monster, final int damag) {
+        int damage = damag;
+        if (chr.getExtra() > 0) {
+            for (int i = 0; i < chr.getExtra(); i++) {
+                damage+= damage * .06;
+            }
+        }
         if (monster.getId() == 8800000) {
             for (MapleMapObject object : chr.getMap().getMapObjects()) {
                 MapleMonster mons = chr.getMap().getMonsterByOid(object.getObjectId());
@@ -548,7 +582,7 @@ public class MapleMap {
             if (killed && monster != null) {
                 killMonster(monster, chr, true);
                 monster.empty();
-                nullifyObject(monster);
+                //nullifyObject(monster);
             }
             return true;
         }
@@ -577,7 +611,7 @@ public class MapleMap {
             broadcastMessage(MaplePacketCreator.killMonster(monster.getObjectId(), animation), monster.getPosition());
             removeMapObject(monster);
             monster.empty();
-            nullifyObject(monster);
+            //nullifyObject(monster);
             return;
         }
         /*if (chr.getQuest(MapleQuest.getInstance(29400)).getStatus().equals(MapleQuestStatus.Status.STARTED)) {
@@ -605,9 +639,9 @@ public class MapleMap {
                     if (player.getMapId() == 240000000) {
                         player.message("Mysterious power arose as I heard the powerful cry of the Nine Spirit Baby Dragon.");
                     } else {
-                        player.dropMessage("To the crew that have finally conquered Horned Tail after numerous attempts, I salute thee! You are the true heroes of Leafre!!");
+                        player.dropMessage("[Legend] To the crew/guy that have finally conquered Horned Tail after numerous attempts, I salute thee! You are the true heroes of Leafre!!");
                         if (player.isGM()) {
-                            player.message("[GM-Message] Horntail was killed by : " + chr.getName());
+                            player.dropMessage("[GM-Message] Horntail was killed by : " + chr.getName());
                         }
                     }
                 }
@@ -657,6 +691,13 @@ public class MapleMap {
             }
             dropFromMonster(dropOwner, monster);
         }
+        if (chr.getOccupationId() == 1) {
+            int NX = (chr.getOccupationLevel() * 10) + 1000;
+            if (Randomizer.nextInt(100) > 98) {
+                chr.getCashShop().gainCash(2, NX);
+                chr.dropMessage(6, "[Sharp]::You have gained " + NX + " Maple Points for being a Casher!");
+            }
+        }
     }
 
     public void killMonster(int monsId) {
@@ -677,7 +718,7 @@ public class MapleMap {
             broadcastMessage(MaplePacketCreator.killMonster(monster.getObjectId(), true), monster.getPosition());
             removeMapObject(monster);
             monster.empty();
-            nullifyObject(monster);
+            //nullifyObject(monster);
         }
     }
 
@@ -1583,6 +1624,8 @@ public class MapleMap {
      * it's threadsafe, gtfo :D
      * @param monster
      * @param mobTime
+     * 
+     * // What about team>>/
      */
     public void addMonsterSpawn(MapleMonster monster, int mobTime, int team) {
         Point newpos = calcPointBelow(monster.getPosition());
@@ -1734,8 +1777,8 @@ public class MapleMap {
     }
 
     public void nullifyObject(MapleMapObject mmobj) {//nice one Simon (: thanks <3
-        mmobj.nullifyPosition();
-        mmobj = null;
+        //mmobj.nullifyPosition();
+        //mmobj = null;
     }
 
     private class ExpireMapItemJob implements Runnable {
@@ -2146,5 +2189,82 @@ public class MapleMap {
 
     public short getMobInterval() {
         return mobInterval;
+    }
+
+    public int getMesos(int lvl) {
+        int rand = 1;
+        switch (lvl) {
+            case 1:
+                rand = Randomizer.rand(1, 24);
+                break;
+            case 2:
+                rand = Randomizer.rand(17, 32);
+                break;
+            case 3:
+                rand = Randomizer.rand(44, 60);
+                break;
+            case 4:
+                rand = Randomizer.rand(76, 93);
+                break;
+            case 5:
+                rand = Randomizer.rand(96, 141);
+                break;
+            case 6:
+                rand = Randomizer.rand(205, 241);
+                break;
+            case 7:
+                rand = Randomizer.rand(293, 378);
+                break;
+            case 8:
+                rand = Randomizer.rand(420, 447);
+                break;
+            case 9:
+                rand = Randomizer.rand(464, 662);
+                break;
+            case 10:
+                rand = Randomizer.rand(547, 728);
+                break;
+            case 11:
+                rand = Randomizer.rand(620, 843); //Hidden Street goes from 100 - 120...so I'm gonna be lazy
+                break;
+            case 12:
+                rand = Randomizer.rand(620, 843);
+                break;
+            case 13:
+                rand = Randomizer.rand(740, 1000); // Yes, 1000.
+                break;
+            case 14:
+                rand = Randomizer.rand(740, 1000);
+                break;
+            case 15:
+                rand = Randomizer.rand(1000, 1243); // Hidden street is not loading anymore, so im gonna guess from here.
+                break;
+            case 16:
+                rand = Randomizer.rand(1000, 1243);
+                break;
+            case 17:
+                rand = Randomizer.rand(1243, 1400);
+                break;
+            case 18:
+                rand = Randomizer.rand(1243, 1400);
+                break;
+            case 19:
+                rand = Randomizer.rand(1400, 1600);
+                break;
+            case 20:
+                rand = Randomizer.rand(1400, 1600); // Coding labor...fml
+                break;
+            default :
+                rand = Randomizer.rand(800, 1200);
+        }
+        return rand;
+    }
+
+    public List<MapleMapObject> getCharactersAsMapObjects() {
+        return getMapObjectsInRange(new Point(0, 0), Double.POSITIVE_INFINITY, Arrays.asList(MapleMapObjectType.PLAYER));
+    }
+    
+    public int getMonstersOnMap() {
+        return spawnedMonstersOnMap.get();
     }
 }

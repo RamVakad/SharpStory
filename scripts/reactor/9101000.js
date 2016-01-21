@@ -27,6 +27,8 @@
  * [x]shows animation,
  * [x]makes stirges and stuff appear
  */
+
+/*
 importPackage(Packages.tools);
 
 function act() {
@@ -35,5 +37,5 @@ function act() {
     rm.getClient().getMap().broadcastMessage(MaplePacketCreator.bunnyPacket()); // Protect the Moon Bunny!
     rm.getClient().getMap().broadcastMessage(MaplePacketCreator.showHPQMoon());
     rm.getClient().getMap().showAllMonsters();
-    
 }
+*/

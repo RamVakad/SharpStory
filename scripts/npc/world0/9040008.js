@@ -1,27 +1,36 @@
-/*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+var status; 
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+function start() { 
+    status = -1; 
+    action(1, 0, 0); 
+} 
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/* Guild Rank Board */
-
-function start() {
-    cm.displayGuildRanks();
-    cm.dispose();
+function action(mode, type, selection) { 
+    if (mode == -1) {
+        cm.dispose();
+    } else {
+        if (mode == 0 && status == 0) {
+            cm.dispose();
+            return;
+        }
+        if (mode == 1)
+            status++;
+        else
+            status--;
+        if (status == 0) { 
+            cm.sendSimple("#eWhat rankings would you like to view?\r\n\
+#b\r\n\
+#fUI/UIWindow.img/QuestIcon/3/0#\r\n\
+#L0#Guild Rankings\r\n\
+#L1#Character Rankings"); 
+        } else if (status == 1) { 
+            if (selection == 0) { 
+                cm.displayGuildRanks();
+                cm.dispose();
+            } else if (selection == 1) { 
+                cm.sendOk(cm.ranking()); 
+                cm.dispose(); 
+            } 
+        }
+    }  
 }

@@ -1,24 +1,24 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package server;
 
 import java.io.File;
@@ -60,6 +60,8 @@ import tools.Pair;
  *
  */
 public class MapleItemInformationProvider {
+
+    private static final List<Integer> AIOItems = initAllItems();
     private static MapleItemInformationProvider instance = null;
     protected MapleDataProvider itemData;
     protected MapleDataProvider equipData;
@@ -256,7 +258,9 @@ public class MapleItemInformationProvider {
 
     public boolean noCancelMouse(int itemId) {
         MapleData item = getItemData(itemId);
-        if (item == null) return false;
+        if (item == null) {
+            return false;
+        }
         return MapleDataTool.getIntConvert("info/noCancelMouse", item, 0) == 1;
     }
 
@@ -398,10 +402,11 @@ public class MapleItemInformationProvider {
             return null;
         }
         for (MapleData data : info.getChildren()) {
-            if (data.getName().startsWith("inc")) 
+            if (data.getName().startsWith("inc")) {
                 ret.put(data.getName().substring(3), MapleDataTool.getIntConvert(data));
+            }
             /*else if (data.getName().startsWith("req"))
-	        ret.put(data.getName(), MapleDataTool.getInt(data.getName(), info, 0));*/
+            ret.put(data.getName(), MapleDataTool.getInt(data.getName(), info, 0));*/
         }
         ret.put("reqJob", MapleDataTool.getInt("reqJob", info, 0));
         ret.put("reqLevel", MapleDataTool.getInt("reqLevel", info, 0));
@@ -450,7 +455,7 @@ public class MapleItemInformationProvider {
             Equip nEquip = (Equip) equip;
             Map<String, Integer> stats = this.getEquipStats(scrollId);
             Map<String, Integer> eqstats = this.getEquipStats(equip.getItemId());
-            if (((nEquip.getUpgradeSlots() > 0 || isCleanSlate(scrollId)) && Math.ceil(Math.random() * 100.0) <= stats.get("success")) || isGM) {
+            if (((nEquip.getUpgradeSlots() > 0 || isCleanSlate(scrollId)) && Math.ceil(Math.random() * 100.0) <= stats.get("success"))/* || isGM*/) {
                 short flag = nEquip.getFlag();
                 switch (scrollId) {
                     case 2040727:
@@ -555,13 +560,13 @@ public class MapleItemInformationProvider {
                         break;
                 }
                 if (!isCleanSlate(scrollId)) {
-                    if (!isGM) {
-                        nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() - 1));
-                    }
+                    //if (!isGM) {
+                    nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() - 1));
+                    //}
                     nEquip.setLevel((byte) (nEquip.getLevel() + 1));
                 }
             } else {
-                if (!usingWhiteScroll && !isCleanSlate(scrollId) && !isGM) {
+                if (!usingWhiteScroll && !isCleanSlate(scrollId)/*&& !isGM*/) {
                     nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() - 1));
                 }
                 if (Randomizer.nextInt(101) < stats.get("cursed")) {
@@ -696,6 +701,7 @@ public class MapleItemInformationProvider {
         }
         MapleData strings = getStringData(itemId);
         if (strings == null) {
+            //System.out.println("null Item ID -" + itemId);
             return null;
         }
         String ret = MapleDataTool.getString("name", strings, null);
@@ -722,8 +728,9 @@ public class MapleItemInformationProvider {
         }
         MapleData data = getItemData(itemId);
         boolean bRestricted = MapleDataTool.getIntConvert("info/tradeBlock", data, 0) == 1;
-        if (!bRestricted)
-            bRestricted = MapleDataTool.getIntConvert("info/quest", data, 0) == 1;        
+        if (!bRestricted) {
+            bRestricted = MapleDataTool.getIntConvert("info/quest", data, 0) == 1;
+        }
         dropRestrictionCache.put(itemId, bRestricted);
         return bRestricted;
     }
@@ -808,7 +815,7 @@ public class MapleItemInformationProvider {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            ps = DatabaseConnection.getConnection().prepareStatement("SELECT cardid, mobid FROM monstercarddata");
+            ps = DatabaseConnection.getConnection().prepareStatement("SELECT * FROM monstercarddata");
             rs = ps.executeQuery();
             while (rs.next()) {
                 monsterBookID.put(rs.getInt(1), rs.getInt(2));
@@ -850,8 +857,8 @@ public class MapleItemInformationProvider {
             return null;
         }
         scriptedItem script = new scriptedItem(MapleDataTool.getInt("spec/npc", getItemData(itemId), 0),
-                                               MapleDataTool.getString("spec/script", getItemData(itemId), ""),
-                                               MapleDataTool.getInt("spec/runOnPickup", getItemData(itemId), 0) == 1);
+                MapleDataTool.getString("spec/script", getItemData(itemId), ""),
+                MapleDataTool.getInt("spec/runOnPickup", getItemData(itemId), 0) == 1);
         scriptedItemCache.put(itemId, script);
         return scriptedItemCache.get(itemId);
     }
@@ -904,11 +911,11 @@ public class MapleItemInformationProvider {
         for (MapleData child : getItemData(itemId).getChildByPath("reward").getChildren()) {
             RewardItem reward = new RewardItem();
             reward.itemid = MapleDataTool.getInt("item", child, 0);
-	    reward.prob = (byte) MapleDataTool.getInt("prob", child, 0);
-	    reward.quantity = (short) MapleDataTool.getInt("count", child, 0);
-	    reward.effect = MapleDataTool.getString("Effect", child, "");
-	    reward.worldmsg = MapleDataTool.getString("worldMsg", child, null);
-	    reward.period = MapleDataTool.getInt("period", child, -1);
+            reward.prob = (byte) MapleDataTool.getInt("prob", child, 0);
+            reward.quantity = (short) MapleDataTool.getInt("count", child, 0);
+            reward.effect = MapleDataTool.getString("Effect", child, "");
+            reward.worldmsg = MapleDataTool.getString("worldMsg", child, null);
+            reward.period = MapleDataTool.getInt("period", child, -1);
 
             totalprob += reward.prob;
 
@@ -953,7 +960,9 @@ public class MapleItemInformationProvider {
 
     public Collection<IItem> canWearEquipment(MapleCharacter chr, Collection<IItem> items) {
         MapleInventory inv = chr.getInventory(MapleInventoryType.EQUIPPED);
-        if (inv.checked()) return items;
+        if (inv.checked()) {
+            return items;
+        }
         Collection<IItem> itemz = new LinkedList<IItem>();
         if (chr.getJob() == MapleJob.SUPERGM || chr.getJob() == MapleJob.GM) {
             for (IItem item : items) {
@@ -965,14 +974,14 @@ public class MapleItemInformationProvider {
         }
         boolean highfivestamp = false;
         /* Removed because players shouldn't even get this, and gm's should just be gm job.
-         try {
-            for (Pair<IItem, MapleInventoryType> ii : ItemFactory.INVENTORY.loadItems(chr.getId(), false)) {
-                if (ii.getRight() == MapleInventoryType.CASH) {
-                    if (ii.getLeft().getItemId() == 5590000) {
-                        highfivestamp = true;
-                    }
-                }
-            }
+        try {
+        for (Pair<IItem, MapleInventoryType> ii : ItemFactory.INVENTORY.loadItems(chr.getId(), false)) {
+        if (ii.getRight() == MapleInventoryType.CASH) {
+        if (ii.getLeft().getItemId() == 5590000) {
+        highfivestamp = true;
+        }
+        }
+        }
         } catch (SQLException ex) {
         }*/
         int tdex = chr.getDex(), tstr = chr.getStr(), tint = chr.getInt(), tluk = chr.getLuk(), fame = chr.getFame();
@@ -990,23 +999,32 @@ public class MapleItemInformationProvider {
             int reqLevel = getEquipStats(equip.getItemId()).get("reqLevel");
             if (highfivestamp) {
                 reqLevel -= 5;
-                if (reqLevel < 0)
+                if (reqLevel < 0) {
                     reqLevel = 0;
+                }
             }
             /*
             int reqJob = getEquipStats(equip.getItemId()).get("reqJob");
             if (reqJob != 0) {
-                Really hard check, and not really needed in this one
-                Gm's should just be GM job, and players cannot change jobs.
+            Really hard check, and not really needed in this one
+            Gm's should just be GM job, and players cannot change jobs.
             }*/
-            if(reqLevel > chr.getLevel()) continue;
-            else if(getEquipStats(equip.getItemId()).get("reqDEX") > tdex) continue;
-            else if(getEquipStats(equip.getItemId()).get("reqSTR") > tstr) continue;
-            else if(getEquipStats(equip.getItemId()).get("reqLUK") > tluk) continue;
-            else if(getEquipStats(equip.getItemId()).get("reqINT") > tint) continue;
+            if (reqLevel > chr.getLevel()) {
+                continue;
+            } else if (getEquipStats(equip.getItemId()).get("reqDEX") > tdex) {
+                continue;
+            } else if (getEquipStats(equip.getItemId()).get("reqSTR") > tstr) {
+                continue;
+            } else if (getEquipStats(equip.getItemId()).get("reqLUK") > tluk) {
+                continue;
+            } else if (getEquipStats(equip.getItemId()).get("reqINT") > tint) {
+                continue;
+            }
             int reqPOP = getEquipStats(equip.getItemId()).get("reqPOP");
             if (reqPOP > 0) {
-                if(getEquipStats(equip.getItemId()).get("reqPOP") > fame) continue;
+                if (getEquipStats(equip.getItemId()).get("reqPOP") > fame) {
+                    continue;
+                }
             }
             equip.wear(true);
             itemz.add(equip);
@@ -1022,44 +1040,52 @@ public class MapleItemInformationProvider {
         }
         boolean highfivestamp = false;
         /* Removed check above for message ><
-         try {
-            for (Pair<IItem, MapleInventoryType> ii : ItemFactory.INVENTORY.loadItems(chr.getId(), false)) {
-                if (ii.getRight() == MapleInventoryType.CASH) {
-                    if (ii.getLeft().getItemId() == 5590000) {
-                        highfivestamp = true;
-                    }
-                }
-            }
+        try {
+        for (Pair<IItem, MapleInventoryType> ii : ItemFactory.INVENTORY.loadItems(chr.getId(), false)) {
+        if (ii.getRight() == MapleInventoryType.CASH) {
+        if (ii.getLeft().getItemId() == 5590000) {
+        highfivestamp = true;
+        }
+        }
+        }
         } catch (SQLException ex) {
         }*/
         int tdex = chr.getDex(), tstr = chr.getStr(), tint = chr.getInt(), tluk = chr.getLuk();
-            for (IItem item : chr.getInventory(MapleInventoryType.EQUIPPED).list()) {
-                IEquip eq = (IEquip) item;
-                tdex += eq.getDex();
-                tstr += eq.getStr();
-                tluk += eq.getLuk();
-                tint += eq.getInt();
+        for (IItem item : chr.getInventory(MapleInventoryType.EQUIPPED).list()) {
+            IEquip eq = (IEquip) item;
+            tdex += eq.getDex();
+            tstr += eq.getStr();
+            tluk += eq.getLuk();
+            tint += eq.getInt();
+        }
+        int reqLevel = getEquipStats(equip.getItemId()).get("reqLevel");
+        if (highfivestamp) {
+            reqLevel -= 5;
+        }
+        int i = 0; //lol xD
+        //Removed job check. Shouldn't really be needed.
+        if (reqLevel > chr.getLevel()) {
+            i++;
+        } else if (getEquipStats(equip.getItemId()).get("reqDEX") > tdex) {
+            i++;
+        } else if (getEquipStats(equip.getItemId()).get("reqSTR") > tstr) {
+            i++;
+        } else if (getEquipStats(equip.getItemId()).get("reqLUK") > tluk) {
+            i++;
+        } else if (getEquipStats(equip.getItemId()).get("reqINT") > tint) {
+            i++;
+        }
+        int reqPOP = getEquipStats(equip.getItemId()).get("reqPOP");
+        if (reqPOP > 0) {
+            if (getEquipStats(equip.getItemId()).get("reqPOP") > chr.getFame()) {
+                i++;
             }
-            int reqLevel = getEquipStats(equip.getItemId()).get("reqLevel");
-            if (highfivestamp) {
-                reqLevel -= 5;
-            }
-            int i = 0; //lol xD
-            //Removed job check. Shouldn't really be needed.
-            if(reqLevel > chr.getLevel()) i++;
-            else if(getEquipStats(equip.getItemId()).get("reqDEX") > tdex) i++;
-            else if(getEquipStats(equip.getItemId()).get("reqSTR") > tstr) i++;
-            else if(getEquipStats(equip.getItemId()).get("reqLUK") > tluk) i++;
-            else if(getEquipStats(equip.getItemId()).get("reqINT") > tint) i++;
-            int reqPOP = getEquipStats(equip.getItemId()).get("reqPOP");
-            if (reqPOP > 0) {
-                if(getEquipStats(equip.getItemId()).get("reqPOP") > chr.getFame()) i++;
-            }
+        }
 
-            if (i > 0) {
-                equip.wear(false);
-                return false;
-            }
+        if (i > 0) {
+            equip.wear(false);
+            return false;
+        }
         equip.wear(true);
         return true;
     }
@@ -1069,58 +1095,163 @@ public class MapleItemInformationProvider {
         MapleData data = getItemData(itemId);
         MapleData data1 = data.getChildByPath("info").getChildByPath("level");
         /*if ((timeless && level == 5) || (!timeless && level == 3)) {
-            MapleData skilldata = data1.getChildByPath("case").getChildByPath("1").getChildByPath(timeless ? "6" : "4");
-            if (skilldata != null) {
-                List<MapleData> skills = skilldata.getChildByPath("Skill").getChildren();
-                    for (int i = 0; i < skilldata.getChildByPath("Skill").getChildren().size(); i++) {
-                        System.out.println(MapleDataTool.getInt(skills.get(i).getChildByPath("id")));
-                        if (Math.random() < 0.1) list.add(new Pair<String, Integer>("Skill" + 0, MapleDataTool.getInt(skills.get(i).getChildByPath("id"))));
-                    }
-            }
+        MapleData skilldata = data1.getChildByPath("case").getChildByPath("1").getChildByPath(timeless ? "6" : "4");
+        if (skilldata != null) {
+        List<MapleData> skills = skilldata.getChildByPath("Skill").getChildren();
+        for (int i = 0; i < skilldata.getChildByPath("Skill").getChildren().size(); i++) {
+        System.out.println(MapleDataTool.getInt(skills.get(i).getChildByPath("id")));
+        if (Math.random() < 0.1) list.add(new Pair<String, Integer>("Skill" + 0, MapleDataTool.getInt(skills.get(i).getChildByPath("id"))));
+        }
+        }
         }*/
         if (data1 != null) {
             MapleData data2 = data1.getChildByPath("info").getChildByPath(Integer.toString(level));
             if (data2 != null) {
-                    for (MapleData da : data2.getChildren()) {
-                        if (Math.random() < 0.9) {
-                            if (da.getName().startsWith("incDEXMin")) {
-                                list.add(new Pair<String, Integer>("incDEX", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incDEXMax")))));
-                            } else if (da.getName().startsWith("incSTRMin")) {
-                                list.add(new Pair<String, Integer>("incSTR", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incSTRMax")))));
-                            } else if (da.getName().startsWith("incINTMin")) {
-                                list.add(new Pair<String, Integer>("incINT", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incINTMax")))));
-                            } else if (da.getName().startsWith("incLUKMin")) {
-                                list.add(new Pair<String, Integer>("incLUK", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incLUKMax")))));
-                            } else if (da.getName().startsWith("incMHPMin")) {
-                                list.add(new Pair<String, Integer>("incMHP", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incMHPMax")))));
-                            } else if (da.getName().startsWith("incMMPMin")) {
-                                list.add(new Pair<String, Integer>("incMMP", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incMMPMax")))));
-                            } else if (da.getName().startsWith("incPADMin")) {
-                                list.add(new Pair<String, Integer>("incPAD", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incPADMax")))));
-                            } else if (da.getName().startsWith("incMADMin")) {
-                                list.add(new Pair<String, Integer>("incMAD", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incMADMax")))));
-                            } else if (da.getName().startsWith("incPDDMin")) {
-                                list.add(new Pair<String, Integer>("incPDD", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incPDDMax")))));
-                            } else if (da.getName().startsWith("incMDDMin")) {
-                                list.add(new Pair<String, Integer>("incMDD", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incMDDMax")))));
-                            } else if (da.getName().startsWith("incACCMin")) {
-                                list.add(new Pair<String, Integer>("incACC", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incACCMax")))));
-                            } else if (da.getName().startsWith("incEVAMin")) {
-                                list.add(new Pair<String, Integer>("incEVA", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incEVAMax")))));
-                            } else if (da.getName().startsWith("incSpeedMin")) {
-                                list.add(new Pair<String, Integer>("incSpeed", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incSpeedMax")))));
-                            } else if (da.getName().startsWith("incJumpMin")) {
-                                list.add(new Pair<String, Integer>("incJump", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incJumpMax")))));
-                            }
+                for (MapleData da : data2.getChildren()) {
+                    if (Math.random() < 0.9) {
+                        if (da.getName().startsWith("incDEXMin")) {
+                            list.add(new Pair<String, Integer>("incDEX", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incDEXMax")))));
+                        } else if (da.getName().startsWith("incSTRMin")) {
+                            list.add(new Pair<String, Integer>("incSTR", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incSTRMax")))));
+                        } else if (da.getName().startsWith("incINTMin")) {
+                            list.add(new Pair<String, Integer>("incINT", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incINTMax")))));
+                        } else if (da.getName().startsWith("incLUKMin")) {
+                            list.add(new Pair<String, Integer>("incLUK", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incLUKMax")))));
+                        } else if (da.getName().startsWith("incMHPMin")) {
+                            list.add(new Pair<String, Integer>("incMHP", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incMHPMax")))));
+                        } else if (da.getName().startsWith("incMMPMin")) {
+                            list.add(new Pair<String, Integer>("incMMP", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incMMPMax")))));
+                        } else if (da.getName().startsWith("incPADMin")) {
+                            list.add(new Pair<String, Integer>("incPAD", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incPADMax")))));
+                        } else if (da.getName().startsWith("incMADMin")) {
+                            list.add(new Pair<String, Integer>("incMAD", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incMADMax")))));
+                        } else if (da.getName().startsWith("incPDDMin")) {
+                            list.add(new Pair<String, Integer>("incPDD", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incPDDMax")))));
+                        } else if (da.getName().startsWith("incMDDMin")) {
+                            list.add(new Pair<String, Integer>("incMDD", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incMDDMax")))));
+                        } else if (da.getName().startsWith("incACCMin")) {
+                            list.add(new Pair<String, Integer>("incACC", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incACCMax")))));
+                        } else if (da.getName().startsWith("incEVAMin")) {
+                            list.add(new Pair<String, Integer>("incEVA", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incEVAMax")))));
+                        } else if (da.getName().startsWith("incSpeedMin")) {
+                            list.add(new Pair<String, Integer>("incSpeed", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incSpeedMax")))));
+                        } else if (da.getName().startsWith("incJumpMin")) {
+                            list.add(new Pair<String, Integer>("incJump", Randomizer.rand(MapleDataTool.getInt(da), MapleDataTool.getInt(data2.getChildByPath("incJumpMax")))));
                         }
                     }
                 }
             }
-        
+        }
+
         return list;
     }
 
+    public Equip setStats(Equip equip, int wa, int matk, int str, int dex, int intel, int luk, int line1, int line2, int line3) {
+        if (wa > 0) {
+            equip.setWatk((short) wa);
+        }
+        if (matk > 0) {
+            equip.setMatk((short) matk);
+        }
+        if (str > 0) {
+            equip.setStr((short) str);
+        }
+        if (dex > 0) {
+            equip.setDex((short) dex);
+        }
+        if (intel > 0) {
+            equip.setInt((short) intel);
+        }
+        if (luk > 0) {
+            equip.setLuk((short) luk);
+        }
+        if (line1 > -1) {
+            equip.setLine1(line1);
+        }
+        if (line2 > -1) {
+            equip.setLine2(line2);
+        }
+        if (line3 > -1) {
+            equip.setLine3(line3);
+        }
+        return equip;
+    }
+
+    public Equip setAuctionStats(Equip equip, int str, int dex, int int_, int luk, int hp, int mp, int watk, int matk, int wdef, int mdef, int acc, int avoid, int hands, int speed, int jump, int vicious, int itemlevel, int itemexp, int ringid, int upgradeslots, int line1, int line2, int line3) {
+        if (str > 0) {
+            equip.setStr((short) str);
+        }
+        if (dex > 0) {
+            equip.setDex((short) dex);
+        }
+        if (int_ > 0) {
+            equip.setInt((short) int_);
+        }
+        if (luk > 0) {
+            equip.setLuk((short) luk);
+        }
+        if (hp > 0) {
+            equip.setHp((short) hp);
+        }
+        if (mp > 0) {
+            equip.setMp((short) mp);
+        }
+        if (watk > 0) {
+            equip.setWatk((short) watk);
+        }
+        if (matk > 0) {
+            equip.setMatk((short) matk);
+        }
+        if (wdef > 0) {
+            equip.setWdef((short) wdef);
+        }
+        if (mdef > 0) {
+            equip.setMdef((short) mdef);
+        }
+        if (acc > 0) {
+            equip.setAcc((short) acc);
+        }
+        if (avoid > 0) {
+            equip.setAvoid((short) avoid);
+        }
+        if (hands > 0) {
+            equip.setHands((short) hands);
+        }
+        if (speed > 0) {
+            equip.setSpeed((short) speed);
+        }
+        if (jump > 0) {
+            equip.setJump((short) jump);
+        }
+        if (vicious > 0) {
+            equip.setVicious((short) vicious);
+        }
+        if (itemlevel > 0) {
+            equip.setItemLevel((byte) itemlevel);
+        }
+        if (itemexp > 0) {
+            equip.setItemExp(itemexp);
+        }
+        if (ringid > 0) {
+            equip.setRingId(ringid);
+        }
+        if (upgradeslots > 0) {
+            equip.setUpgradeSlots(upgradeslots);
+        }
+        if (line1 > 0) {
+            equip.setLine1(line1);
+        }
+        if (line2 > 0) {
+            equip.setLine2(line2);
+        }
+        if (line3 > 0) {
+            equip.setLine3(line3);
+        }
+        return equip;
+    }
+
     public class scriptedItem {
+
         private boolean runOnPickup;
         private int npc;
         private String script;
@@ -1145,8 +1276,59 @@ public class MapleItemInformationProvider {
     }
 
     public static final class RewardItem {
+
         public int itemid, period;
         public short prob, quantity;
         public String effect, worldmsg;
+    }
+
+    public List<Integer> getAllItemIds() {
+        return AIOItems;
+    }
+
+    public static List<Integer> initAllItems() {
+        MapleItemInformationProvider temp = getInstance();
+        List<Integer> items = new ArrayList<Integer>();
+        MapleData itemsData;
+        itemsData = temp.stringData.getData("Cash.img");
+        for (MapleData itemFolder : itemsData.getChildren()) {
+            items.add(Integer.parseInt(itemFolder.getName()));
+        }
+        itemsData = temp.stringData.getData("Consume.img");
+        for (MapleData itemFolder : itemsData.getChildren()) {
+            items.add(Integer.parseInt(itemFolder.getName()));
+        }
+        itemsData = temp.stringData.getData("Eqp.img").getChildByPath("Eqp");
+        for (MapleData eqpType : itemsData.getChildren()) {
+            for (MapleData itemFolder : eqpType.getChildren()) {
+                items.add(Integer.parseInt(itemFolder.getName()));
+            }
+        }
+        itemsData = temp.stringData.getData("Etc.img").getChildByPath("Etc");
+        for (MapleData itemFolder : itemsData.getChildren()) {
+            items.add(Integer.parseInt(itemFolder.getName()));
+        }
+        itemsData = temp.stringData.getData("Ins.img");
+        for (MapleData itemFolder : itemsData.getChildren()) {
+            items.add(Integer.parseInt(itemFolder.getName()));
+        }
+        itemsData = temp.stringData.getData("Pet.img");
+        for (MapleData itemFolder : itemsData.getChildren()) {
+            items.add(Integer.parseInt(itemFolder.getName()));
+        }
+
+        List<Integer> exceptions = new ArrayList<Integer>();
+        for (int i : constants.ServerConstants.AIO_EXCEPTIONS) {
+            exceptions.add(i);
+        }
+        items.removeAll(exceptions);
+        return items;
+    }
+
+    public boolean isCashAIO(int itemId) {
+        if (getEquipStats(itemId) == null) {
+            return true;
+        }
+        return itemId / 1000000 == 5 || getEquipStats(itemId).get("cash") == 1;
     }
 }

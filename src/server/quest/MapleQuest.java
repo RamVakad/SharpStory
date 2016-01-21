@@ -1,24 +1,24 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package server.quest;
 
 import java.io.File;
@@ -30,6 +30,7 @@ import java.util.Map;
 import client.MapleCharacter;
 import client.MapleQuestStatus;
 import client.MapleQuestStatus.Status;
+import constants.ServerConstants;
 import provider.MapleData;
 import provider.MapleDataProvider;
 import provider.MapleDataProviderFactory;
@@ -41,6 +42,7 @@ import tools.MaplePacketCreator;
  * @author Matze
  */
 public class MapleQuest {
+
     private static Map<Integer, MapleQuest> quests = new HashMap<Integer, MapleQuest>();
     protected short infoNumber, infoex, id;
     protected int timeLimit, timeLimit2;
@@ -82,13 +84,16 @@ public class MapleQuest {
         if (completeReqData != null) {
             for (MapleData completeReq : completeReqData.getChildren()) {
                 MapleQuestRequirement req = new MapleQuestRequirement(this, MapleQuestRequirementType.getByWZName(completeReq.getName()), completeReq);
-                if (req.getType().equals(MapleQuestRequirementType.INFO_NUMBER)) infoNumber = (short) MapleDataTool.getInt(completeReq, 0);
+                if (req.getType().equals(MapleQuestRequirementType.INFO_NUMBER)) {
+                    infoNumber = (short) MapleDataTool.getInt(completeReq, 0);
+                }
                 if (req.getType().equals(MapleQuestRequirementType.INFO_EX)) {
                     MapleData zero = completeReq.getChildByPath("0");
                     if (zero != null) {
                         MapleData value = zero.getChildByPath("value");
-                        if (value != null)
+                        if (value != null) {
                             infoex = Short.parseShort(MapleDataTool.getString(value, "0"));
+                        }
                     }
                 }
                 if (req.getType().equals(MapleQuestRequirementType.MOB)) {
@@ -133,6 +138,9 @@ public class MapleQuest {
     }
 
     private boolean canStart(MapleCharacter c, int npcid) {
+        if (!ServerConstants.QUESTS) {
+            return false;
+        }
         if (c.getQuest(this).getStatus() != Status.NOT_STARTED && !(c.getQuest(this).getStatus() == Status.COMPLETED && repeatable)) {
             return false;
         }
@@ -142,6 +150,7 @@ public class MapleQuest {
             }
         }
         return true;
+
     }
 
     public boolean canComplete(MapleCharacter c, Integer npcid) {
@@ -171,16 +180,17 @@ public class MapleQuest {
 
     public void complete(MapleCharacter c, int npc, Integer selection) {
         if ((autoPreComplete || checkNPCOnMap(c, npc)) && canComplete(c, npc)) {
-            /*for (MapleQuestAction a : completeActs) {
-                if (!a.check(c)) {
-                    return;
-                }
-            } */
+            //for (MapleQuestAction a : completeActs) {
+            //if (!a.check(c)) {
+            //return;
+            //}
+            //} 
             forceComplete(c, npc);
             for (MapleQuestAction a : completeActs) {
                 a.run(c, selection);
             }
         }
+        reset(c);
     }
 
     public void reset(MapleCharacter c) {
@@ -200,21 +210,26 @@ public class MapleQuest {
     }
 
     public boolean forceStart(MapleCharacter c, int npc) {
-        if (!canStart(c, npc)) return false;
+        if (!canStart(c, npc)) {
+            return false;
+        }
 
         MapleQuestStatus newStatus = new MapleQuestStatus(this, MapleQuestStatus.Status.STARTED, npc);
         newStatus.setForfeited(c.getQuest(this).getForfeited());
 
-        if (timeLimit > 0) c.questTimeLimit(this, 30000);//timeLimit * 1000
+        if (timeLimit > 0) {
+            c.questTimeLimit(this, 30000);//timeLimit * 1000
+        }
         if (timeLimit2 > 0) {//=\
-
         }
         c.updateQuest(newStatus);
         return true;
     }
 
     public boolean forceComplete(MapleCharacter c, int npc) {
-        if (!canComplete(c, npc)) return false;
+        if (!canComplete(c, npc)) {
+            return false;
+        }
 
         MapleQuestStatus newStatus = new MapleQuestStatus(this, MapleQuestStatus.Status.COMPLETED, npc);
         newStatus.setForfeited(c.getQuest(this).getForfeited());
@@ -243,11 +258,14 @@ public class MapleQuest {
         if (data != null) {
             for (MapleData req : data.getChildren()) {
                 MapleQuestRequirementType type = MapleQuestRequirementType.getByWZName(req.getName());
-                if (!type.equals(MapleQuestRequirementType.ITEM)) continue;
+                if (!type.equals(MapleQuestRequirementType.ITEM)) {
+                    continue;
+                }
 
                 for (MapleData d : req.getChildren()) {
-                        if (MapleDataTool.getInt(d.getChildByPath("id"), 0) == itemid)
-                            return MapleDataTool.getInt(d.getChildByPath("count"), 0);
+                    if (MapleDataTool.getInt(d.getChildByPath("id"), 0) == itemid) {
+                        return MapleDataTool.getInt(d.getChildByPath("count"), 0);
+                    }
                 }
             }
         }
@@ -259,11 +277,14 @@ public class MapleQuest {
         if (data != null) {
             for (MapleData req : data.getChildren()) {
                 MapleQuestRequirementType type = MapleQuestRequirementType.getByWZName(req.getName());
-                if (!type.equals(MapleQuestRequirementType.MOB)) continue;
+                if (!type.equals(MapleQuestRequirementType.MOB)) {
+                    continue;
+                }
 
                 for (MapleData d : req.getChildren()) {
-                        if (MapleDataTool.getInt(d.getChildByPath("id"), 0) == mid)
-                            return MapleDataTool.getInt(d.getChildByPath("count"), 0);
+                    if (MapleDataTool.getInt(d.getChildByPath("id"), 0) == mid) {
+                        return MapleDataTool.getInt(d.getChildByPath("count"), 0);
+                    }
                 }
             }
         }

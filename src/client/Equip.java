@@ -1,24 +1,24 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package client;
 
 import java.util.LinkedList;
@@ -28,13 +28,15 @@ import tools.MaplePacketCreator;
 import tools.Pair;
 
 public class Equip extends Item implements IEquip {
+
     private byte upgradeSlots;
     private byte level, flag, itemLevel;
     private short str, dex, _int, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, vicious;
     private float itemExp;
     private int ringid = -1;
     private boolean wear = false;
-    private int skill0, skill1, skill2, skill3;
+    private int skill0, skill1, skill2, skill3; //i suspect that kevin was trying to add potential?
+    private int line1, line2, line3;
 
     public Equip(int id, byte position) {
         super(id, position, (short) 1);
@@ -76,8 +78,11 @@ public class Equip extends Item implements IEquip {
         ret.log = new LinkedList<String>(log);
         ret.setOwner(getOwner());
         ret.setQuantity(getQuantity());
-	ret.setExpiration(getExpiration());
-	ret.setGiftFrom(getGiftFrom());
+        ret.setExpiration(getExpiration());
+        ret.setGiftFrom(getGiftFrom());
+        ret.line1 = line1;
+        ret.line2 = line2;
+        ret.line3 = line3;
         return ret;
     }
 
@@ -243,42 +248,43 @@ public class Equip extends Item implements IEquip {
     public void gainLevel(MapleClient c, boolean timeless) {
         List<Pair<String, Integer>> stats = MapleItemInformationProvider.getInstance().getItemLevelupStats(getItemId(), itemLevel, timeless);
         for (Pair<String, Integer> stat : stats) {
-            if (stat.getLeft().equals("incDEX")) 
+            if (stat.getLeft().equals("incDEX")) {
                 dex += stat.getRight();
-            else if (stat.getLeft().equals("incSTR"))
-                str += stat.getRight();   
-            else if (stat.getLeft().equals("incINT"))
-                _int += stat.getRight();  
-            else if (stat.getLeft().equals("incLUK"))
+            } else if (stat.getLeft().equals("incSTR")) {
+                str += stat.getRight();
+            } else if (stat.getLeft().equals("incINT")) {
+                _int += stat.getRight();
+            } else if (stat.getLeft().equals("incLUK")) {
                 luk += stat.getRight();
-            else if (stat.getLeft().equals("incMHP"))
+            } else if (stat.getLeft().equals("incMHP")) {
                 hp += stat.getRight();
-            else if (stat.getLeft().equals("incMMP"))
+            } else if (stat.getLeft().equals("incMMP")) {
                 mp += stat.getRight();
-            else if (stat.getLeft().equals("incPAD"))
+            } else if (stat.getLeft().equals("incPAD")) {
                 watk += stat.getRight();
-            else if (stat.getLeft().equals("incMAD"))
+            } else if (stat.getLeft().equals("incMAD")) {
                 matk += stat.getRight();
-            else if (stat.getLeft().equals("incPDD"))
+            } else if (stat.getLeft().equals("incPDD")) {
                 wdef += stat.getRight();
-            else if (stat.getLeft().equals("incMDD"))
+            } else if (stat.getLeft().equals("incMDD")) {
                 mdef += stat.getRight();
-            else if (stat.getLeft().equals("incEVA"))
+            } else if (stat.getLeft().equals("incEVA")) {
                 avoid += stat.getRight();
-            else if (stat.getLeft().equals("incACC"))
+            } else if (stat.getLeft().equals("incACC")) {
                 acc += stat.getRight();
-            else if (stat.getLeft().equals("incSpeed"))
-                speed += stat.getRight();   
-            else if (stat.getLeft().equals("incJump"))
+            } else if (stat.getLeft().equals("incSpeed")) {
+                speed += stat.getRight();
+            } else if (stat.getLeft().equals("incJump")) {
                 jump += stat.getRight();
-            else if (stat.getLeft().equals("Skill0"))
+            } else if (stat.getLeft().equals("Skill0")) {
                 skill0 = stat.getRight();
-            else if (stat.getLeft().equals("Skill1"))
+            } else if (stat.getLeft().equals("Skill1")) {
                 skill1 = stat.getRight();
-            else if (stat.getLeft().equals("Skill2"))
+            } else if (stat.getLeft().equals("Skill2")) {
                 skill2 = stat.getRight();
-            else if (stat.getLeft().equals("Skill3"))
+            } else if (stat.getLeft().equals("Skill3")) {
                 skill3 = stat.getRight();
+            }
         }
         this.itemLevel++;
         c.announce(MaplePacketCreator.showEquipmentLevelUp());
@@ -298,8 +304,9 @@ public class Equip extends Item implements IEquip {
         if (itemExp >= 364) {
             itemExp = (itemExp - 364);
             gainLevel(c, timeless);
-        } else
+        } else {
             c.getPlayer().forceUpdateItem(MapleInventoryType.EQUIPPED, this);
+        }
     }
 
     public void setItemExp(int exp) {
@@ -313,6 +320,8 @@ public class Equip extends Item implements IEquip {
     @Override
     public void setQuantity(short quantity) {
         if (quantity < 0 || quantity > 1) {
+            short one = 1;
+            super.setQuantity(one);
             throw new RuntimeException("Setting the quantity to " + quantity + " on an equip (itemid: " + getItemId() + ")");
         }
         super.setQuantity(quantity);
@@ -320,10 +329,6 @@ public class Equip extends Item implements IEquip {
 
     public void setUpgradeSlots(int i) {
         this.upgradeSlots = (byte) i;
-    }
-
-    public void setVicious(int i) {
-        this.vicious = (short) i;
     }
 
     public int getRingId() {
@@ -344,5 +349,49 @@ public class Equip extends Item implements IEquip {
 
     public byte getItemLevel() {
         return itemLevel;
+    }
+
+    public int getLine1() {
+        return line1;
+    }
+
+    public int getLine2() {
+        return line2;
+    }
+
+    public int getLine3() {
+        return line3;
+    }
+
+    public void setLine1(int x) {
+        this.line1 = x;
+    }
+
+    public void setLine2(int x) {
+        this.line2 = x;
+    }
+
+    public void setLine3(int x) {
+        this.line3 = x;
+    }
+
+    public String getLines() {
+        if (line1 == 0 && line2 == 0 && line3 == 0) {
+            return "No Potential";
+        }
+        if (line1 == 99 && line2 == 99 && line3 == 99) {
+            return "Destroyed";
+        }
+        String x = "Pot - ";
+        if (line1 != 0) {
+            x += line1 + " ";
+        }
+        if (line2 != 0) {
+            x += line2 + " ";
+        }
+        if (line3 != 0) {
+            x += line3;
+        }
+        return x;
     }
 }

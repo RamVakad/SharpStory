@@ -33,9 +33,7 @@ public final class ServerStatusRequestHandler extends AbstractMaplePacketHandler
         byte world = (byte) slea.readShort();//Wuuu? ):
         int status;
         int num = 0;
-        for (byte load : Server.getInstance().getLoad(world).keySet()) {
-             num += load;
-        }
+        num = Server.getInstance().getWorld((int) world).getPlayerStorage().getStorageSize();
         if (num >= ServerConstants.CHANNEL_LOAD) {
             status = 2;
         } else if (num >= ServerConstants.CHANNEL_LOAD * .8) { // More than 80 percent o___o

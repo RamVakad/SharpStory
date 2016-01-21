@@ -50,14 +50,14 @@ import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 public class GMServer {
 
     private IoAcceptor acceptor;
-    private Map<String, IoSession> outGame;//LOL
+    private Map<String, IoSession> outGame;//LOL //is it normal that I don't get the joke?
     private Map<String, IoSession> inGame;
     private static GMServer instance;
     public final static String KEYWORD = "MOOPLEDEV";
 
     public static GMServer getInstance() {
         if (instance == null) {
-            instance = new GMServer();
+            instance = new GMServer(); //false does not work
         }
         return instance;
     }

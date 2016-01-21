@@ -54,11 +54,14 @@ public final class RangedAttackHandler extends AbstractDealDamageHandler {
     public final void handlePacket(SeekableLittleEndianAccessor slea, MapleClient c) {
         MapleCharacter player = c.getPlayer();
         AttackInfo attack = parseDamage(slea, player, true);
+        if (attack.skill == Aran.COMBO_TEMPEST) {
+            return; // Yayyy no Combo Tempest
+        }
         if (attack.skill == Buccaneer.ENERGY_ORB || attack.skill == ThunderBreaker.SPARK || attack.skill == Shadower.TAUNT || attack.skill == NightLord.TAUNT) {
-            player.getMap().broadcastMessage(player, MaplePacketCreator.rangedAttack(player, attack.skill, attack.skilllevel, attack.stance, attack.numAttackedAndDamage, 0, attack.allDamage, attack.speed, attack.direction, attack.display), false);
+            player.getMap().broadcastMessage(player, MaplePacketCreator.rangedAttack(player, attack.skill, attack.skilllevel, attack.stance, attack.numAttackedAndDamage, 0, attack.allDamage, attack.speed, attack.direction, attack.display), true);
             applyAttack(attack, player, 1);
         } else if (attack.skill == Aran.COMBO_SMASH || attack.skill == Aran.COMBO_PENRIL || attack.skill == Aran.COMBO_TEMPEST) {
-            player.getMap().broadcastMessage(player, MaplePacketCreator.rangedAttack(player, attack.skill, attack.skilllevel, attack.stance, attack.numAttackedAndDamage, 0, attack.allDamage, attack.speed, attack.direction, attack.display), false);
+            player.getMap().broadcastMessage(player, MaplePacketCreator.rangedAttack(player, attack.skill, attack.skilllevel, attack.stance, attack.numAttackedAndDamage, 0, attack.allDamage, attack.speed, attack.direction, attack.display), true);
             if (attack.skill == Aran.COMBO_SMASH && player.getCombo() >= 30) {
                 applyAttack(attack, player, 1);
             } else if (attack.skill == Aran.COMBO_PENRIL && player.getCombo() >= 100) {
@@ -124,7 +127,8 @@ public final class RangedAttackHandler extends AbstractDealDamageHandler {
                 if (effect != null && effect.getBulletConsume() != 0) {
                     bulletConsume = (byte) (effect.getBulletConsume() * (hasShadowPartner ? 2 : 1));
                 }
-                MapleInventoryManipulator.removeById(c, MapleInventoryType.USE, projectile, bulletConsume, false, true);
+                //MapleInventoryManipulator.removeById(c, MapleInventoryType.USE, projectile, bulletConsume, false, true);
+                //No recharging ftw...
             }
 
             if (projectile != 0 || soulArrow || attack.skill == 11101004 || attack.skill == 15111007 || attack.skill == 14101006) {

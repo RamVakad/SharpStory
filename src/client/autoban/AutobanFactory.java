@@ -19,7 +19,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package client.autoban;
 
 import client.MapleCharacter;
@@ -29,6 +28,8 @@ import client.MapleCharacter;
  * @author kevintjuh93
  */
 public enum AutobanFactory {
+
+    CUSTOM, // Yes, u think im gonna keep adding here? i'm confused about enums already..
     MOB_COUNT,
     FIX_DAMAGE,
     HIGH_HP_HEALING,
@@ -40,9 +41,9 @@ public enum AutobanFactory {
     ITEM_VAC,
     FAST_ATTACK(10, 30000),
     MPCON(25, 30000);
-    
     private int points;
     private long expiretime;
+    private boolean alerted = false;
 
     private AutobanFactory() {
         this(1, -1);
@@ -71,7 +72,10 @@ public enum AutobanFactory {
     }
 
     public void autoban(MapleCharacter chr, String value) {
-        chr.autoban("Autobanned for (" + this.name() + ": " + value + ")", 1);
-        chr.sendPolice("You have been blocked by #bMooplePolice#k for the HACK reason.");
+        if (!alerted) {
+            chr.autoban("Autobanned for (" + this.name() + ": " + value + ")", 1);
+            chr.sendPolice("You have been blocked by #bSharpPolice#k for the HACK reason.");
+            alerted = true;
+        }
     }
 }

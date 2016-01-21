@@ -1,26 +1,27 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package scripting.event;
 
+import java.awt.Point;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,13 +35,16 @@ import javax.script.ScriptException;
 import net.server.Channel;
 import net.server.MapleParty;
 import server.TimerManager;
+import server.life.MapleLifeFactory;
 import server.maps.MapleMap;
+import tools.MaplePacketCreator;
 
 /**
  *
  * @author Matze
  */
 public class EventManager {
+
     private Invocable iv;
     private Channel cserv;
     private Map<String, EventInstanceManager> instances = new HashMap<String, EventInstanceManager>();
@@ -70,6 +74,7 @@ public class EventManager {
 
     public void schedule(final String methodName, final EventInstanceManager eim, long delay) {
         schedule = TimerManager.getInstance().schedule(new Runnable() {
+
             public void run() {
                 try {
                     iv.invokeFunction(methodName, eim);
@@ -86,8 +91,29 @@ public class EventManager {
         schedule.cancel(true);
     }
 
+    public void updateLastEvent() {
+        getChannelServer().updateLastEvent();
+    }
+
+    public int getRate() {
+        return getChannelServer().getRate();
+    }
+
+    public void incRate(int x) {
+        getChannelServer().incRate(x);
+    }
+
+    public void decRate(int x) {
+        getChannelServer().decRate(x);
+    }
+
+    public void setRate(int x) {
+        getChannelServer().setRate(x);
+    }
+
     public ScheduledFuture<?> scheduleAtTimestamp(final String methodName, long timestamp) {
         return TimerManager.getInstance().scheduleAtTimestamp(new Runnable() {
+
             public void run() {
                 try {
                     iv.invokeFunction(methodName, (Object) null);
@@ -160,5 +186,22 @@ public class EventManager {
         } catch (NoSuchMethodException ex) {
             Logger.getLogger(EventManager.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public void spawnSlimes() {
+        getChannelServer().broadcastPacket(MaplePacketCreator.serverNotice(6, "[Sharp]:: Silver Slimes are about to spawn in the FM in T-30 Seconds!"));
+
+        TimerManager.getInstance().schedule(new Runnable() {
+
+            public void run() {
+                getChannelServer().broadcastPacket(MaplePacketCreator.serverNotice(6, "[Sharp]:: The Silver Slimes have spawned!"));
+                getChannelServer().getMapFactory().getMap(910000000).spawnMonsterOnGroundBelow(MapleLifeFactory.getMonster(9400203), new Point(990, 4));
+                getChannelServer().getMapFactory().getMap(910000000).spawnMonsterOnGroundBelow(MapleLifeFactory.getMonster(9400203), new Point(730, 4));
+                getChannelServer().getMapFactory().getMap(910000000).spawnMonsterOnGroundBelow(MapleLifeFactory.getMonster(9400203), new Point(460, 4));
+                getChannelServer().getMapFactory().getMap(910000000).spawnMonsterOnGroundBelow(MapleLifeFactory.getMonster(9400203), new Point(13, 34));
+                getChannelServer().getMapFactory().getMap(910000000).spawnMonsterOnGroundBelow(MapleLifeFactory.getMonster(9400203), new Point(-302, 34));
+            }
+        }, 30000);
+
     }
 }

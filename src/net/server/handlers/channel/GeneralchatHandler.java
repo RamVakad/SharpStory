@@ -26,6 +26,10 @@ import tools.MaplePacketCreator;
 import tools.data.input.SeekableLittleEndianAccessor;
 import client.MapleClient;
 import client.command.Commands;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import tools.DatabaseConnection;
 
 public final class GeneralchatHandler extends net.AbstractMaplePacketHandler {
 
@@ -38,17 +42,40 @@ public final class GeneralchatHandler extends net.AbstractMaplePacketHandler {
             sp[0] = sp[0].toLowerCase().substring(1);
             if (!Commands.executePlayerCommand(c, sp, heading)) {
                 if (chr.isGM()) {
-                    if (!Commands.executeGMCommand(c, sp, heading)) {
+                    if (Commands.executeGMCommand(c, sp, heading)) {
+                        if (!sp[0].equals("online")) {
+                            try {
+                                Connection con = DatabaseConnection.getConnection();
+                                PreparedStatement ps = con.prepareStatement("INSERT INTO gmlog (`name`, `command`) VALUES (?, ?)");
+                                ps.setString(1, chr.getName());
+                                ps.setString(2, s);
+                                ps.executeUpdate();
+                                ps.close();
+                            } catch (SQLException e) {
+                                //System.out.println(e);
+                            }
+                        }
+                    } else {
                         Commands.executeAdminCommand(c, sp, heading);
                     }
                 }
             }
         } else {
-            if (!chr.isHidden())
-                chr.getMap().broadcastMessage(MaplePacketCreator.getChatText(chr.getId(), s, chr.isGM(), slea.readByte()));
-            else
-                chr.getMap().broadcastGMMessage(MaplePacketCreator.getChatText(chr.getId(), s, chr.isGM(), slea.readByte()));
+            if (chr.canTalk() == false) {
+                if (chr.isDonor()) {
+                    c.getPlayer().getMap().broadcastMessage(MaplePacketCreator.sendYellowTip("[Donor]" + c.getPlayer().getName() + ": " + s));
+                    c.getPlayer().getMap().broadcastMessage(MaplePacketCreator.getChatText(c.getPlayer().getId(), s, false, 1));
+                } else {
+                    if (!chr.isHidden()) {
+                        chr.getMap().broadcastMessage(MaplePacketCreator.getChatText(chr.getId(), s, chr.isGM(), slea.readByte()));
+                    } else {
+                        chr.getMap().broadcastGMMessage(MaplePacketCreator.getChatText(chr.getId(), s, chr.isGM(), slea.readByte()));
+                    }
+                }
+                if (c.getPlayer().getWatcher() != null) {
+                    c.getPlayer().getWatcher().message("[Watch][" + c.getPlayer().getName() + "][All] : " + s);
+                }
+            }
         }
     }
 }
-

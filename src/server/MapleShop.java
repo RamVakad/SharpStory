@@ -1,24 +1,24 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package server;
 
 import java.sql.Connection;
@@ -43,6 +43,7 @@ import tools.MaplePacketCreator;
  * @author Matze
  */
 public class MapleShop {
+
     private static final Set<Integer> rechargeableItems = new LinkedHashSet<Integer>();
     private int id;
     private int npcId;
@@ -85,15 +86,16 @@ public class MapleShop {
                 System.out.println("Wrong slot number in shop " + id);
                 return;
             }
-        } else 
+        } else {
             return;
+        }
 
         MapleItemInformationProvider ii = MapleItemInformationProvider.getInstance();
         if (item != null && item.getPrice() > 0) {
             if (c.getPlayer().getMeso() >= (long) item.getPrice() * quantity) {
                 if (MapleInventoryManipulator.checkSpace(c, itemId, quantity, "")) {
                     if (!ItemConstants.isRechargable(itemId)) { //Pets can't be bought from shops
-                        MapleInventoryManipulator.addById(c, itemId, quantity);          
+                        MapleInventoryManipulator.addById(c, itemId, quantity);
                         c.getPlayer().gainMeso(-(item.getPrice() * quantity), false);
                     } else {
                         short slotMax = ii.getSlotMax(c, item.getItemId());
@@ -102,53 +104,56 @@ public class MapleShop {
                         c.getPlayer().gainMeso(-item.getPrice(), false);
                     }
                     c.getSession().write(MaplePacketCreator.shopTransaction((byte) 0));
-                } else 
+                } else {
                     c.getSession().write(MaplePacketCreator.shopTransaction((byte) 3));
-                
-            } else
-                c.getSession().write(MaplePacketCreator.shopTransaction((byte) 2));
-
-        } else if (item != null && item.getPitch() > 0) {
-                if (c.getPlayer().getInventory(MapleInventoryType.ETC).countById(4310000) >= (long) item.getPitch() * quantity) {
-                    if (MapleInventoryManipulator.checkSpace(c, itemId, quantity, "")) {
-                        if (!ItemConstants.isRechargable(itemId)) {
-                            MapleInventoryManipulator.addById(c, itemId, quantity);
-                            MapleInventoryManipulator.removeById(c, MapleInventoryType.ETC, 4310000, item.getPitch() * quantity, false, false);
-                        } else {
-                            short slotMax = ii.getSlotMax(c, item.getItemId());
-                            quantity = slotMax;
-                            MapleInventoryManipulator.addById(c, itemId, quantity);
-                            MapleInventoryManipulator.removeById(c, MapleInventoryType.ETC, 4310000, item.getPitch() * quantity, false, false);
-                        }
-                        c.getSession().write(MaplePacketCreator.shopTransaction((byte) 0));
-                    } else
-                        c.getSession().write(MaplePacketCreator.shopTransaction((byte) 3));
                 }
 
-            } else if (c.getPlayer().getInventory(MapleInventoryType.CASH).countById(token) != 0) {
-                int amount = c.getPlayer().getInventory(MapleInventoryType.CASH).countById(token);
-                int value = amount * tokenvalue;
-                int cost = item.getPrice() * quantity;
-                if (c.getPlayer().getMeso() + value >= cost) {
-                    int cardreduce = value - cost;
-                    int diff = cardreduce + c.getPlayer().getMeso();
-                    if (MapleInventoryManipulator.checkSpace(c, itemId, quantity, "")) {
-                        if (itemId >= 5000000 && itemId <= 5000100) {
-                            int petid = MaplePet.createPet(itemId);
-                            MapleInventoryManipulator.addById(c, itemId, quantity, null, petid, -1);
-                        } else {
-                            MapleInventoryManipulator.addById(c, itemId, quantity);
-                        }
-                        c.getPlayer().gainMeso(diff, false);
+            } else {
+                c.getSession().write(MaplePacketCreator.shopTransaction((byte) 2));
+            }
+
+        } else if (item != null && item.getPitch() > 0) {
+            if (c.getPlayer().getInventory(MapleInventoryType.ETC).countById(4310000) >= (long) item.getPitch() * quantity) {
+                if (MapleInventoryManipulator.checkSpace(c, itemId, quantity, "")) {
+                    if (!ItemConstants.isRechargable(itemId)) {
+                        MapleInventoryManipulator.addById(c, itemId, quantity);
+                        MapleInventoryManipulator.removeById(c, MapleInventoryType.ETC, 4310000, item.getPitch() * quantity, false, false);
                     } else {
-                        c.getSession().write(MaplePacketCreator.shopTransaction((byte) 3));
+                        short slotMax = ii.getSlotMax(c, item.getItemId());
+                        quantity = slotMax;
+                        MapleInventoryManipulator.addById(c, itemId, quantity);
+                        MapleInventoryManipulator.removeById(c, MapleInventoryType.ETC, 4310000, item.getPitch() * quantity, false, false);
                     }
                     c.getSession().write(MaplePacketCreator.shopTransaction((byte) 0));
-                } else
-                    c.getSession().write(MaplePacketCreator.shopTransaction((byte) 2));
+                } else {
+                    c.getSession().write(MaplePacketCreator.shopTransaction((byte) 3));
+                }
             }
-    }
 
+        } else if (c.getPlayer().getInventory(MapleInventoryType.CASH).countById(token) != 0) {
+            int amount = c.getPlayer().getInventory(MapleInventoryType.CASH).countById(token);
+            int value = amount * tokenvalue;
+            int cost = item.getPrice() * quantity;
+            if (c.getPlayer().getMeso() + value >= cost) {
+                int cardreduce = value - cost;
+                int diff = cardreduce + c.getPlayer().getMeso();
+                if (MapleInventoryManipulator.checkSpace(c, itemId, quantity, "")) {
+                    if (itemId >= 5000000 && itemId <= 5000100) {
+                        int petid = MaplePet.createPet(itemId);
+                        MapleInventoryManipulator.addById(c, itemId, quantity, null, petid, -1);
+                    } else {
+                        MapleInventoryManipulator.addById(c, itemId, quantity);
+                    }
+                    c.getPlayer().gainMeso(diff, false);
+                } else {
+                    c.getSession().write(MaplePacketCreator.shopTransaction((byte) 3));
+                }
+                c.getSession().write(MaplePacketCreator.shopTransaction((byte) 0));
+            } else {
+                c.getSession().write(MaplePacketCreator.shopTransaction((byte) 2));
+            }
+        }
+    }
 
     public void sell(MapleClient c, MapleInventoryType type, short slot, short quantity) {
         if (quantity == 0xFFFF || quantity == 0) {
@@ -265,5 +270,25 @@ public class MapleShop {
 
     public int getId() {
         return id;
+    }
+
+    public static MapleShop createById(int id) {
+        MapleShop ret = new MapleShop(id, 9030000);
+        try {
+            for (int itemId : MapleItemInformationProvider.getInstance().getAllItemIds()) {
+                if (itemId / 1000 == id) {
+                    if (!MapleItemInformationProvider.getInstance().isCashAIO(itemId)) {
+                        //try{
+                        ret.addItem(new MapleShopItem((short) 10000, itemId, 5000000, 0));
+                        //}catch (Exception e){
+                        //System.out.print("Error Loading Shop item : " + itemId + "\r\n");
+                        //}
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ret;
     }
 }

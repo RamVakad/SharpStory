@@ -1,3 +1,7 @@
+
+
+
+
 /*
 	This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
@@ -145,7 +149,7 @@ function action(mode, type, selection) {
 				else if (selection == 3) mode = "HELL";
 	
 				if (!cm.createPyramid(mode, party == 1)) {
-					cm.sendOk("All rooms are full for this mode ):");
+					cm.sendOk("All rooms are full for this mode, please try it again later or on another channel ):");
 				}
 				cm.dispose();
 			}

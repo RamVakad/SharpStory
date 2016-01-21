@@ -37,6 +37,7 @@ import tools.data.input.SeekableLittleEndianAccessor;
  */
 public final class ReportHandler extends AbstractMaplePacketHandler {
     public final void handlePacket(SeekableLittleEndianAccessor slea, MapleClient c) {
+        /*
         int type = slea.readByte(); //01 = Conversation claim 00 = illegal program
         String victim = slea.readMapleAsciiString();
         int reason = slea.readByte();
@@ -54,7 +55,7 @@ public final class ReportHandler extends AbstractMaplePacketHandler {
                 c.announce(MaplePacketCreator.reportResponse((byte) 2));
             return;
         }
-        c.getChannelServer().broadcastGMPacket(MaplePacketCreator.serverNotice(6, victim + " was reported for: " + description));
+        c.getWorldServer().broadcastGMPacket(MaplePacketCreator.serverNotice(6, victim + " was reported for: " + description));
         addReport(c.getPlayer().getId(), MapleCharacter.getIdByName(victim), 0, description, null);
     } else if (type == 1) {
         String chatlog = slea.readMapleAsciiString();
@@ -75,6 +76,8 @@ public final class ReportHandler extends AbstractMaplePacketHandler {
     } else {
         c.getChannelServer().broadcastGMPacket(MaplePacketCreator.serverNotice(6, c.getPlayer().getName() + " is probably packet editing. Got unknown report type, which is impossible."));
     }
+    */
+        c.getPlayer().dropMessage(1, "Report feature is not coded, post report on forums please.");
   }
 
      public void addReport(int reporterid, int victimid, int reason, String description, String chatlog) {

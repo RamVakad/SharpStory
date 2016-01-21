@@ -22,6 +22,8 @@
 /* Sabi JQ herb pile #1
 */
 function start() {
+    cm.dispose();
+    /*
     var prizes = Array(1040052, 1040054, 1040130, 1041143, 1042013, 1042022, 1042034, 1042084, 1042098, 1042117, 1702002, 1702015);
     var chances = Array(10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 5, 5);
     var totalodds = 0;
@@ -46,4 +48,5 @@ function start() {
     cm.gainItem(prizes[choice],1);
     cm.warp(101000000, 0);
     cm.dispose();
+     */
 }

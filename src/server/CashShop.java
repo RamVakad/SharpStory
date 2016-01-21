@@ -48,6 +48,7 @@ import tools.Pair;
  * @author Flav
  */
 public class CashShop {
+
     public static class CashItem {
 
         private int sn, itemId, price;
@@ -90,8 +91,9 @@ public class CashShop {
 
             int petid = -1;
 
-            if (ItemConstants.isPet(itemId))
+            if (ItemConstants.isPet(itemId)) {
                 petid = MaplePet.createPet(itemId);
+            }
 
             if (ii.getInventoryType(itemId).equals(MapleInventoryType.EQUIP)) {
                 item = ii.getEquipById(itemId);
@@ -99,14 +101,17 @@ public class CashShop {
                 item = new Item(itemId, (byte) 0, count, petid);
             }
 
-            if (ItemConstants.EXPIRING_ITEMS)
+            if (ItemConstants.EXPIRING_ITEMS) {
                 item.setExpiration(period == 1 ? System.currentTimeMillis() + (1000 * 60 * 60 * 4 * period) : System.currentTimeMillis() + (1000 * 60 * 60 * 24 * period));
+            }
 
             item.setSN(sn);
             return item;
         }
     }
+
     public static class SpecialCashItem {
+
         private int sn, modifier;
         private byte info; //?
 
@@ -136,7 +141,7 @@ public class CashShop {
         private static final List<SpecialCashItem> specialcashitems = new ArrayList<SpecialCashItem>();
 
         static {
-            MapleDataProvider etc = MapleDataProviderFactory.getDataProvider(new File("wz/Etc.wz"));
+            MapleDataProvider etc = MapleDataProviderFactory.getDataProvider(new File(System.getProperty("wzpath") + "/Etc.wz"));
 
             for (MapleData item : etc.getData("Commodity.img").getChildren()) {
                 int sn = MapleDataTool.getIntConvert("SN", item);
@@ -169,8 +174,12 @@ public class CashShop {
                 ex.printStackTrace();
             } finally {
                 try {
-                    if (rs != null) rs.close();
-                    if (ps != null) ps.close();
+                    if (rs != null) {
+                        rs.close();
+                    }
+                    if (ps != null) {
+                        ps.close();
+                    }
                 } catch (SQLException ex) {
                 }
             }
@@ -197,7 +206,7 @@ public class CashShop {
         public static List<SpecialCashItem> getSpecialCashItems() {
             return specialcashitems;
         }
-        
+
         public static void reloadSpecialCashItems() {//Yay?
             specialcashitems.clear();
             PreparedStatement ps = null;
@@ -212,11 +221,15 @@ public class CashShop {
                 ex.printStackTrace();
             } finally {
                 try {
-                    if (rs != null) rs.close();
-                    if (ps != null) ps.close();
+                    if (rs != null) {
+                        rs.close();
+                    }
+                    if (ps != null) {
+                        ps.close();
+                    }
                 } catch (SQLException ex) {
                 }
-            }            
+            }
         }
     }
     private int accountId, characterId, nxCredit, maplePoint, nxPrepaid;
@@ -270,8 +283,12 @@ public class CashShop {
             rs.close();
             ps.close();
         } finally {
-            if (ps != null) ps.close();
-            if (rs != null) rs.close();
+            if (ps != null) {
+                ps.close();
+            }
+            if (rs != null) {
+                rs.close();
+            }
         }
     }
 
@@ -368,12 +385,13 @@ public class CashShop {
             sqle.printStackTrace();
         } finally {
             try {
-                if (ps != null) ps.close();
+                if (ps != null) {
+                    ps.close();
+                }
             } catch (SQLException ex) {
             }
         }
     }
-
 
     public List<Pair<IItem, String>> loadGifts() {
         List<Pair<IItem, String>> gifts = new ArrayList<Pair<IItem, String>>();
@@ -394,8 +412,9 @@ public class CashShop {
                     equip = (IEquip) item;
                     equip.setRingId(rs.getInt("ringid"));
                     gifts.add(new Pair<IItem, String>(equip, rs.getString("message")));
-                } else
+                } else {
                     gifts.add(new Pair<IItem, String>(item, rs.getString("message")));
+                }
 
                 if (CashItemFactory.isPackage(cItem.getItemId())) { //Packages never contains a ring
                     for (IItem packageItem : CashItemFactory.getPackage(cItem.getItemId())) {
@@ -437,13 +456,7 @@ public class CashShop {
         ps.setInt(4, accountId);
         ps.executeUpdate();
         ps.close();
-        List<Pair<IItem, MapleInventoryType>> itemsWithType = new ArrayList<Pair<IItem, MapleInventoryType>>();
 
-        for (IItem item : inventory) {
-            itemsWithType.add(new Pair<IItem, MapleInventoryType>(item, MapleItemInformationProvider.getInstance().getInventoryType(item.getItemId())));
-        }
-
-        factory.saveItems(itemsWithType, accountId);
         ps = con.prepareStatement("DELETE FROM `wishlists` WHERE `charid` = ?");
         ps.setInt(1, characterId);
         ps.executeUpdate();
@@ -456,5 +469,13 @@ public class CashShop {
         }
 
         ps.close();
+
+        List<Pair<IItem, MapleInventoryType>> itemsWithType = new ArrayList<Pair<IItem, MapleInventoryType>>();
+
+        for (IItem item : inventory) {
+            itemsWithType.add(new Pair<IItem, MapleInventoryType>(item, MapleItemInformationProvider.getInstance().getInventoryType(item.getItemId())));
+        }
+
+        factory.saveItems(itemsWithType, accountId);
     }
 }

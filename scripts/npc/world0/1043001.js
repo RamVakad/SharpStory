@@ -1,50 +1,48 @@
-/*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+var status; 
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+function start() { 
+    status = -1; 
+    action(1, 0, 0); 
+} 
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/* Sabi JQ herb pile #1
-*/
-
-function start() {
-    var prizes = Array(1060041, 1060048, 1060116, 1061113, 1061130, 1061139, 1062009, 1062017, 1062024, 1062056, 1062061, 1702045, 1702114);
-    var chances = Array(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 5, 5);
-    var totalodds = 0;
-    var choice = 0;
-    for (var i = 0; i < chances.length; i++) {
-        var itemGender = (Math.floor(prizes[i]/1000)%10);
-        if ((cm.getPlayer().getGender() != itemGender) && (itemGender != 2))
-            chances[i] = 0;
-    }
-    for (var i = 0; i < chances.length; i++)
-        totalodds += chances[i];
-    var randomPick = Math.floor(Math.random()*totalodds)+1;
-    for (var i = 0; i < chances.length; i++) {
-        randomPick -= chances[i];
-        if (randomPick <= 0) {
-            choice = i;
-            randomPick = totalodds + 100;
+function action(mode, type, selection) { 
+    var abandonedpets = cm.getDeletedPetsString();
+    if (mode == -1) {
+        cm.dispose();
+    } else {
+        if (mode == 0 && status == 0) {
+            cm.dispose();
+            return;
         }
-    }
-    if (cm.isQuestStarted(2051))
-        cm.gainItem(4031032,1);
-    cm.gainItem(prizes[choice],1);
-    cm.warp(101000000, 0);
-    cm.dispose();
+        if (mode == 1)
+            status++;
+        else
+            status--;
+        if (status == 0) {
+            cm.sendSimple("#eWould you like to abandon one of your pet in this bush? \r\n\
+#d\t\t\t\t\t    Total Abandoned Pets - "+abandonedpets+"\r\n\
+\r\n\
+#k#fUI/UIWindow.img/QuestIcon/3/0#\r\n\
+#b#L1337#Yes.\r\n\
+#L0#No."); 
+        } else if (status == 1) { 
+            if (selection == 0) {
+                cm.sendOk("#eGood. You're doing the right thing.");
+                cm.dispose();
+            } else {
+                var plist = cm.PetList(cm.getClient());
+                if (plist != "") {
+                    var intro = "#ePlease choose the pet you want to abandon :(\r\n\r\n#fUI/UIWindow.img/QuestIcon/3/0#\r\n";
+                    cm.sendSimple(intro+plist);
+                } else {
+                    cm.sendOk("#e#rYou don't even have any pets.");
+                    cm.dispose();
+                }
+            }
+        } else if (status == 2) {
+            cm.deletePet(selection);
+            cm.sendOk("#e#rAbandoning pets is not the right thing to do. Just saying.");
+            cm.dispose();
+        }
+    }  
 }

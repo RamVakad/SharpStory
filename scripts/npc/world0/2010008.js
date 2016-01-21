@@ -25,7 +25,10 @@ var status = 0;
 var sel;
 
 function start() {
-    cm.sendSimple("What would you like to do?\r\n#b#L0#Create/Change your Guild Emblem#l#k");
+    cm.sendSimple("#eWhat would you like to do?\r\n\\n\
+\r\n\
+#fUI/UIWindow.img/QuestIcon/3/0#\r\n\
+#b#L0#Create/Change your Guild Emblem#l#k");
 }
 
 function action(mode, type, selection) {
@@ -37,9 +40,9 @@ function action(mode, type, selection) {
             sel = selection;
             if (sel == 0) {
                 if (cm.getPlayer().getGuildRank() == 1)
-                    cm.sendYesNo("Creating or changing Guild Emblem costs #b 5000000 mesos#k, are you sure you want to continue?");
+                    cm.sendYesNo("#eCreating or changing Guild Emblem costs #b2 Billion Mesos#k, are you sure you want to continue?");
                 else
-                    cm.sendOk("You must be the Guild Leader to change the Emblem. Please tell your leader to speak with me.");
+                    cm.sendOk("#e#rYou must be the Guild Leader to change the Emblem. Please tell your leader to speak with me!");
             }
         }
         else if (status == 2 && sel == 0) {

@@ -33,4 +33,6 @@ public interface ISkill {
     public boolean getAction();
     public Element getElement();
     public boolean isBeginnerSkill();
+    public boolean isGMSkill();
+    public boolean isBuggedSkill();
 }

@@ -63,13 +63,13 @@ public class MonsterDropCreator {
     public static void main(String args[]) throws FileNotFoundException, IOException, NotBoundException, InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException, MalformedObjectNameException {
 	MapleData data = MapleDataProviderFactory.getDataProvider(new File(System.getProperty("wzpath") + "/String.wz")).getData("MonsterBook.img");
 
-	System.out.println("Warning : Use this only at your own risk!");
+	System.out.println("Warning : Use this only at your own risk! DOES NOT ADD MESO DROPS!!");
 	System.out.println("Press any key to continue...");
 	System.console().readLine();
 	System.out.println("As you wish.\n\n\n\n");
 
 	long currtime = System.currentTimeMillis();
-	addFlagData = Boolean.parseBoolean(args[0]);
+	//addFlagData = Boolean.parseBoolean(args[0]);
 
 	System.out.println("Loading : Item name string.");
 	getAllItems();
@@ -104,10 +104,10 @@ public class MonsterDropCreator {
 		}
 		for (int i = 0; i < multipleDropsIncrement(itemid, monsterId); i++) {
 		    if (first) {
-			sb.append("(DEFAULT, ");
+			sb.append("(");
 			first = false;
 		    } else {
-			sb.append(", (DEFAULT, ");
+			sb.append(", (");
 		    }
 		    sb.append(monsterId).append(", ");
 		    if (addFlagData) {
@@ -195,10 +195,10 @@ public class MonsterDropCreator {
 		    }
 		    for (int i = 0; i < multipleDropsIncrement(itemid, idtoLog); i++) {
 			if (first) {
-			    sb.append("(DEFAULT, ");
+			    sb.append("(");
 			    first = false;
 			} else {
-			    sb.append(", (DEFAULT, ");
+			    sb.append(", (");
 			}
 			sb.append(idtoLog).append(", ");
 			if (addFlagData) {
@@ -242,7 +242,7 @@ public class MonsterDropCreator {
 			    rate *= 25;
 			}
 			SQL.append("INSERT INTO ").append(monsterQueryData).append(" VALUES ");
-			SQL.append("(DEFAULT, ");
+			SQL.append("(");
 			SQL.append(Pair_.getLeft()).append(", "); // Dropperid
 			if (addFlagData) {
 			    sb.append("'', "); // Flags
@@ -274,7 +274,6 @@ public class MonsterDropCreator {
                 for (Pair<Integer, MobInfo> Pair_ : mobCache) {
                     if (Pair_.getRight().getName().equalsIgnoreCase(bookName.toString())) {
                         SQL.append("INSERT INTO ").append("monstercarddata").append(" VALUES (");
-                        SQL.append(i).append(", ");
                         SQL.append(Pair.getLeft());
                         SQL.append(", ");
                         SQL.append(Pair_.getLeft()).append(");\n");

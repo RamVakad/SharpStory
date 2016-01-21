@@ -124,7 +124,7 @@ public final class TakeDamageHandler extends AbstractMaplePacketHandler {
                                 bouncedamage = attacker.getMaxHp() / 5;
                             }
                             map.damageMonster(player, attacker, bouncedamage);
-                            map.broadcastMessage(player, MaplePacketCreator.damageMonster(oid, bouncedamage), true);
+                            map.broadcastMessage(player, MaplePacketCreator.damageMonster(oid, bouncedamage, player.getName()), true);
                             player.getClient().announce(MaplePacketCreator.showOwnBuffEffect(id, 5));
                             map.broadcastMessage(player, MaplePacketCreator.showBuffeffect(player.getId(), id, 5), false);
                         }
@@ -147,7 +147,7 @@ public final class TakeDamageHandler extends AbstractMaplePacketHandler {
                     bouncedamage = Math.min(bouncedamage, attacker.getMaxHp() / 10);
                     map.damageMonster(player, attacker, bouncedamage);
                     damage -= bouncedamage;
-                    map.broadcastMessage(player, MaplePacketCreator.damageMonster(oid, bouncedamage), false, true);
+                    map.broadcastMessage(player, MaplePacketCreator.damageMonster(oid, bouncedamage, player.getName()), false, true);
                     player.checkMonsterAggro(attacker);
                 }
             }

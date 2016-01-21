@@ -67,4 +67,22 @@ public class MapleShopFactory {
         }
         return loadShop(npcId, false);
     }
+    public MapleShop getShopById(int id){
+        if (shops.containsKey(id)){
+            return shops.get(id);
+        }
+        return loadShopById(id, true);
+    }
+    private MapleShop loadShopById(int id, boolean isShopId) {
+        MapleShop ret = MapleShop.createById(id);
+        if (ret != null) {
+            shops.put(ret.getId(), ret);
+            npcShops.put(ret.getNpcId(), ret);
+        } else if (isShopId) {
+            shops.put(id, null);
+        } else {
+            npcShops.put(id, null);
+        }
+        return ret;
+    }
 }

@@ -24,15 +24,15 @@ package net;
 import client.MapleClient;
 import constants.ServerConstants;
 import net.server.Server;
+import org.apache.mina.core.service.IoHandlerAdapter;
+import org.apache.mina.core.session.IdleStatus;
+import org.apache.mina.core.session.IoSession;
 import tools.MapleAESOFB;
 import tools.MaplePacketCreator;
+import tools.PrintError;
 import tools.data.input.ByteArrayByteStream;
 import tools.data.input.GenericSeekableLittleEndianAccessor;
 import tools.data.input.SeekableLittleEndianAccessor;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.core.service.IoHandlerAdapter;
-import org.apache.mina.core.session.IdleStatus;
-import tools.PrintError;
 
 public class MapleServerHandler extends IoHandlerAdapter {
 
@@ -61,10 +61,10 @@ public class MapleServerHandler extends IoHandlerAdapter {
     @Override
     public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
         /*synchronized (session) {
-            MapleClient client = ((MapleClient) session.getAttribute(MapleClient.CLIENT_KEY));
-            if (client != null) {
-                client.disconnect();
-            }
+        MapleClient client = ((MapleClient) session.getAttribute(MapleClient.CLIENT_KEY));
+        if (client != null) {
+        client.disconnect();
+        }
         }*/
         session.close(true);
         PrintError.print(PrintError.EXCEPTION_CAUGHT, cause);
@@ -99,6 +99,7 @@ public class MapleServerHandler extends IoHandlerAdapter {
         session.write(MaplePacketCreator.getHello(ServerConstants.VERSION, ivSend, ivRecv));
         session.setAttribute(MapleClient.CLIENT_KEY, client);
     }
+    
 
     @Override
     public void sessionClosed(IoSession session) throws Exception {
@@ -106,9 +107,9 @@ public class MapleServerHandler extends IoHandlerAdapter {
             MapleClient client = (MapleClient) session.getAttribute(MapleClient.CLIENT_KEY);
             if (client != null) {
                 try {
-                    client.disconnect();                    
+                    client.disconnect();
                 } finally {
-                    session.removeAttribute(MapleClient.CLIENT_KEY);  
+                    session.removeAttribute(MapleClient.CLIENT_KEY);
                     client.empty();
                 }
             }
@@ -128,6 +129,12 @@ public class MapleServerHandler extends IoHandlerAdapter {
             try {
                 packetHandler.handlePacket(slea, client);
             } catch (Throwable t) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(client.getPlayer().getName()).append(" sent invalid message!.\r\n");
+                sb.append("----------------------------------------------------------------------------\r\n");
+                sb.append(tools.StringUtil.stackTraceToString(t)).append("\r\n");
+                sb.append("----------------------------------------------------------------------------\r\n");
+                PrintError.print(PrintError.UNHANDLED_MESSAGE, sb.toString());
             }
         }
     }

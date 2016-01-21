@@ -26,6 +26,6 @@ function act() {
     rm.spawnFakeMonster(8800000);
     for (i=8800003; i<8800011; i++)
         rm.spawnMonster(i);
-    rm.createMapMonitor(280030000, true, 211042300, "ps00", 211042300, 2118002);
+    rm.createMapMonitor(280030000, "ps00");
     rm.mapMessage(5, "Zakum is summoned by the force of Eye of Fire.");
 }

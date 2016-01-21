@@ -70,7 +70,9 @@ public final class PlayerLoggedinHandler extends AbstractMaplePacketHandler {
             player.newClient(c);
         }
         if (player.isGM()) {
-            GMServer.getInstance().addInGame(player.getName(), c.getSession());
+            if (System.getProperty("gmserver").equals("true")) {
+                GMServer.getInstance().addInGame(player.getName(), c.getSession());
+            }
         }
         c.setPlayer(player);
         c.setAccID(player.getAccountID());
@@ -87,7 +89,7 @@ public final class PlayerLoggedinHandler extends AbstractMaplePacketHandler {
                             sb.append(player.getName()).append(" failed to login.\r\n");
                             sb.append("Player in the World Server? = ").append(c.getWorldServer().isConnected(charName)).append("\r\n");
                             sb.append("Player in the Channel Server = ").append(charName).append("\r\n");
-                            PrintError.print(PrintError.ACCOUNT_STUCK, sb.toString());
+                            PrintError.print(PrintError.PLAYER_LOGGEDIN, sb.toString());
                             //ch.removePlayer(ch.getPlayerStorage().getCharacterByName(charName));//probably stuck
                             allowLogin = false;
                         }
@@ -150,9 +152,9 @@ public final class PlayerLoggedinHandler extends AbstractMaplePacketHandler {
         player.sendKeymap();
         player.sendMacros();
         player.getMap().addPlayer(player);
+        c.getSession().write(MaplePacketCreator.sendHint("#e[#rSharp#k]:: Welcome to #bSharpStory#k! Don't forget to vote for great rewards!~", 280, 5));
         World world = server.getWorld(c.getWorld());
         world.getPlayerStorage().addPlayer(player);
-        server.getLoad(c.getWorld()).get(c.getChannel()).incrementAndGet();
         int buddyIds[] = player.getBuddylist().getBuddyIds();
         world.loggedOn(player.getName(), player.getId(), c.getChannel(), buddyIds);
         for (CharacterIdChannelPair onlineBuddy : server.getWorld(c.getWorld()).multiBuddyFind(player.getId(), buddyIds)) {
@@ -199,7 +201,23 @@ public final class PlayerLoggedinHandler extends AbstractMaplePacketHandler {
                 }
             }
         }
-        player.showNote();
+        
+        boolean newmail = false;
+        try {
+            PreparedStatement ps1 = DatabaseConnection.getConnection().prepareStatement("SELECT message FROM notes WHERE `to`=? AND `deleted` = 0 AND `checked` = 0");
+            ps1.setString(1, player.getName());
+            ResultSet rs1 = ps1.executeQuery();
+            while (rs1.next()) {
+                newmail = true;
+            }
+        } catch (Exception e) {
+            System.out.println("Exception at PlayerLoggedInHandler.java: " + e);
+        }
+        
+        if (newmail) {
+            player.showNotes();
+        }
+        
         if (player.getParty() != null) {
             MaplePartyCharacter pchar = player.getMPC();
             pchar.setChannel(c.getChannel());

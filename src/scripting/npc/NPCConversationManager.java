@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package scripting.npc;
 
+import client.AuctionSystemHandler;
 import client.Equip;
 import client.IItem;
 import client.ISkill;
@@ -30,15 +31,19 @@ import java.sql.ResultSet;
 import constants.ExpTable;
 import client.MapleCharacter;
 import client.MapleClient;
+import client.MapleInventory;
 import client.MapleInventoryType;
 import client.MapleJob;
 import client.MaplePet;
 import client.MapleSkinColor;
 import client.MapleStat;
 import client.SkillFactory;
+import constants.ItemConstants;
 import tools.Randomizer;
-import java.io.File;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.LinkedList;
 import java.util.List;
 import net.server.Channel;
@@ -48,14 +53,16 @@ import net.server.MaplePartyCharacter;
 import net.server.Server;
 import net.server.guild.MapleAlliance;
 import net.server.guild.MapleGuild;
-import provider.MapleData;
-import provider.MapleDataProviderFactory;
 import scripting.AbstractPlayerInteraction;
 import server.MapleInventoryManipulator;
 import server.MapleItemInformationProvider;
+import server.MapleShopFactory;
 import server.MapleStatEffect;
 import server.events.gm.MapleEvent;
-import server.expeditions.MapleExpedition;
+import server.life.MapleLifeFactory;
+import server.life.MapleMonster;
+import server.life.MapleMonsterInformationProvider;
+import server.life.MapleMonsterStats;
 import server.maps.MapleMap;
 import server.maps.MapleMapFactory;
 import server.partyquest.Pyramid;
@@ -238,6 +245,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         return getPlayer().getInventory(MapleItemInformationProvider.getInstance().getInventoryType(itemid)).countById(itemid);
     }
 
+    public int itemQuantityX10(int itemid) {
+        return (getPlayer().getInventory(MapleItemInformationProvider.getInstance().getInventoryType(itemid)).countById(itemid)) * 10;
+    }
+
     public void displayGuildRanks() {
         MapleGuild.displayGuildRanks(getClient(), npc);
     }
@@ -296,20 +307,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     }
 
     public void resetStats() {
-        getPlayer().resetStats();
-    }
-
-    public void maxMastery() {
-        for (MapleData skill_ : MapleDataProviderFactory.getDataProvider(new File(System.getProperty("wzpath") + "/" + "String.wz")).getData("Skill.img").getChildren()) {
-            try {
-                ISkill skill = SkillFactory.getSkill(Integer.parseInt(skill_.getName()));
-                getPlayer().changeSkillLevel(skill, (byte) 0, skill.getMaxLevel(), -1);
-            } catch (NumberFormatException nfe) {
-                break;
-            } catch (NullPointerException npe) {
-                continue;
-            }
-        }
+        //getPlayer().resetStats();
     }
 
     public void processGachapon(int[] id, boolean remote) {
@@ -326,6 +324,12 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public void disbandAlliance(MapleClient c, int allianceId) {
         PreparedStatement ps = null;
         try {
+            ps = DatabaseConnection.getConnection().prepareStatement("UPDATE guilds SET allianceId = ? where allianceId = ?");
+            ps.setInt(1, allianceId);
+            ps.setInt(2, 0);
+            ps.execute();
+            ps.close();
+
             ps = DatabaseConnection.getConnection().prepareStatement("DELETE FROM `alliance` WHERE id = ?");
             ps.setInt(1, allianceId);
             ps.executeUpdate();
@@ -467,13 +471,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             getPlayer().setTeam(getEvent().getLimit() % 2); //muhaha :D
         }
     }
-    
-    public MapleExpedition createExpedition(String type, byte min) {
-        MapleParty party = getPlayer().getParty();
-        if (party == null || party.getMembers().size() < min) return null;
-        return new MapleExpedition(getPlayer());        
-    }
-    
+
     public boolean createPyramid(String mode, boolean party) {//lol
         PyramidMode mod = PyramidMode.valueOf(mode);
 
@@ -509,5 +507,897 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         py.warp(mapid);
         dispose();
         return true;
+    }
+
+    public String PetList(MapleClient c) {
+        StringBuilder str = new StringBuilder();
+        MapleInventory cash = c.getPlayer().getInventory(MapleInventoryType.CASH);
+        List<String> stra = new LinkedList<String>();
+        for (IItem item : cash.list()) {
+            if (ItemConstants.isPet(item.getItemId())) {
+                stra.add("#L" + item.getPosition() + "##v" + item.getItemId() + "##l");
+            }
+        }
+        for (String strb : stra) {
+            str.append(strb);
+        }
+        return str.toString();
+    }
+
+    public String EquipList(MapleClient c) {
+        StringBuilder str = new StringBuilder();
+        MapleInventory equip = c.getPlayer().getInventory(MapleInventoryType.EQUIP);
+        List<String> stra = new LinkedList<String>();
+        for (IItem item : equip.list()) {
+            stra.add("#L" + item.getPosition() + "##v" + item.getItemId() + "##l");
+        }
+        for (String strb : stra) {
+            str.append(strb);
+        }
+        return str.toString();
+    }
+
+    public String UseList(MapleClient c) {
+        StringBuilder str = new StringBuilder();
+        MapleInventory use = c.getPlayer().getInventory(MapleInventoryType.USE);
+        List<String> stra = new LinkedList<String>();
+        for (IItem item : use.list()) {
+            stra.add("#L" + item.getPosition() + "##v" + item.getItemId() + "##l");
+        }
+        for (String strb : stra) {
+            str.append(strb);
+        }
+        return str.toString();
+    }
+
+    public String CashList(MapleClient c) {
+        StringBuilder str = new StringBuilder();
+        MapleInventory cash = c.getPlayer().getInventory(MapleInventoryType.CASH);
+        List<String> stra = new LinkedList<String>();
+        for (IItem item : cash.list()) {
+            stra.add("#L" + item.getPosition() + "##v" + item.getItemId() + "##l");
+        }
+        for (String strb : stra) {
+            str.append(strb);
+        }
+        return str.toString();
+    }
+
+    public String ETCList(MapleClient c) {
+        StringBuilder str = new StringBuilder();
+        MapleInventory etc = c.getPlayer().getInventory(MapleInventoryType.ETC);
+        List<String> stra = new LinkedList<String>();
+        for (IItem item : etc.list()) {
+            stra.add("#L" + item.getPosition() + "##v" + item.getItemId() + "##l");
+        }
+        for (String strb : stra) {
+            str.append(strb);
+        }
+        return str.toString();
+    }
+
+    public String SetupList(MapleClient c) {
+        StringBuilder str = new StringBuilder();
+        MapleInventory setup = c.getPlayer().getInventory(MapleInventoryType.SETUP);
+        List<String> stra = new LinkedList<String>();
+        for (IItem item : setup.list()) {
+            stra.add("#L" + item.getPosition() + "##v" + item.getItemId() + "##l");
+        }
+        for (String strb : stra) {
+            str.append(strb);
+        }
+        return str.toString();
+    }
+
+    public String getFullConnected() {
+        int x = 0;
+        for (Channel ch : Server.getInstance().getChannelsFromWorld(getPlayer().getWorld())) {
+            x += ch.getConnectedClients();
+        }
+        DecimalFormat df = new DecimalFormat();
+        DecimalFormatSymbols dfs = new DecimalFormatSymbols();
+        dfs.setGroupingSeparator(',');
+        df.setDecimalFormatSymbols(dfs);
+        return df.format(x);
+    }
+
+    public String getWithCommas(int x) {
+        DecimalFormat df = new DecimalFormat();
+        DecimalFormatSymbols dfs = new DecimalFormatSymbols();
+        dfs.setGroupingSeparator(',');
+        df.setDecimalFormatSymbols(dfs);
+        return df.format(x);
+    }
+
+    public int getTransRate() {
+        return c.getChannelServer().getRate();
+    }
+
+    public void gainEqWithStat(int id, int wa, int matt, int str, int dex, int intel, int luk, int line1, int line2, int line3) {
+        gainEqWithStats(id, wa, matt, str, dex, intel, luk, line1, line2, line3);
+    }
+
+    public boolean editEq(byte slot, short incWA, short incMA, short incStr, short incDex, short incInt, short incLuk, boolean set) {
+        MapleInventory equipinv = getPlayer().getInventory(MapleInventoryType.EQUIP);
+        Equip eqp = (Equip) equipinv.getItem(slot).copy();
+
+        int nStr = eqp.getStr() + incStr;
+        int nDex = eqp.getDex() + incDex;
+        int nInt = eqp.getInt() + incInt;
+        int nLuk = eqp.getLuk() + incLuk;
+        int nWatk = eqp.getWatk() + incWA;
+        int nMatk = eqp.getMatk() + incMA;
+
+        if (set) {
+            if (nStr > 0) {
+                nStr = incStr;
+            }
+            if (nDex > 0) {
+                nDex = incDex;
+            }
+            if (nInt > 0) {
+                nInt = incInt;
+            }
+            if (nLuk > 0) {
+                nLuk = incLuk;
+            }
+            if (incWA > 0) {
+                nWatk = incWA;
+            }
+            if (incMA > 0) {
+                nMatk = incMA;
+            }
+        }
+
+        if (nStr > 30000) {
+            nStr = 30000;
+        }
+        if (nDex > 30000) {
+            nDex = 30000;
+        }
+        if (nInt > 30000) {
+            nInt = 30000;
+        }
+        if (nLuk > 30000) {
+            nLuk = 30000;
+        }
+        if (nWatk > 30000) {
+            nWatk = 30000;
+        }
+        if (nMatk > 30000) {
+            nMatk = 30000;
+        }
+
+        eqp.setStr((short) nStr); // STR
+        eqp.setDex((short) nDex); // DEX
+        eqp.setInt((short) nInt); // INT
+        eqp.setLuk((short) nLuk); //LUK
+        eqp.setWatk((short) nWatk); // Watk
+        eqp.setMatk((short) nMatk); // Matk
+
+        equipinv.removeItem(slot);
+        equipinv.addItem(eqp);
+        getPlayer().reload();
+        return true;
+    }
+
+    public String potEq(byte slot) {
+        String ret = "";
+        tryblock:
+        try {
+            MapleInventory equipinv = getPlayer().getInventory(MapleInventoryType.EQUIP);
+            Equip eqp = (Equip) equipinv.getItem(slot).copy();
+
+            if (eqp.getLines().equals("Destroyed")) {
+                ret = "#e#d#rDestroyed items lose potential abilities, therefore cannot be potentialed.";
+                break tryblock;
+            }
+
+
+            if (eqp.getLines().equals("No Potential")) {
+                int destroychance = Randomizer.nextInt(9);
+                if (destroychance > 7) {
+                    int gonerand = Randomizer.nextInt(9);
+                    if (gonerand < 5) {
+                        getPlayer().takeVotePT(1);
+                        MapleInventoryManipulator.removeFromSlot(c, equipinv.getType(), slot, (short) 1, false);
+                        ret = "#e#d#rSorry, your item has been totally destroyed.";
+                        break tryblock;
+                    } else {
+                        eqp.setLine1(99);
+                        eqp.setLine2(99);
+                        eqp.setLine3(99);
+                        equipinv.removeItem(slot);
+                        equipinv.addItem(eqp);
+                        getPlayer().takeVotePT(1);
+                        getPlayer().reload();
+                        ret = "#e#d#rSorry, your item's potential ablility has been destroyed.";
+                        break tryblock;
+                    }
+                }
+            }
+
+            for (int i = 0; i < 3; i++) {
+                int lineno = i + 1;
+                if (lineno == 3) {
+                    if (eqp.getLine3() == 0) {
+                        int linerandom = Randomizer.nextInt(100);
+                        if (linerandom > 10) {
+                            break;
+                        }
+                    }
+                }
+                eqp = randomizePotential(eqp, lineno);
+            }
+            equipinv.removeItem(slot);
+            equipinv.addItem(eqp);
+            getPlayer().takeVotePT(1);
+            getPlayer().reload();
+            ret = "#e#rSuccess!";
+            break tryblock;
+        } catch (Exception e) {
+            System.out.println("Exception at potEq() - " + e);
+        }
+        return ret;
+    }
+
+    public Equip randomizePotential(Equip eqp, int line) {
+        int potrand = Randomizer.nextInt(26);
+        int statrand = Randomizer.nextInt(4);
+        statrand += 1;
+        if (potrand < 12) {
+            switch (line) {
+                case 1:
+                    eqp.setLine1(statrand);
+                    break;
+                case 2:
+                    eqp.setLine2(statrand);
+                    break;
+                case 3:
+                    eqp.setLine3(statrand);
+                    break;
+            }
+        }
+        if (potrand > 12 && potrand < 21) {
+            switch (line) {
+                case 1:
+                    eqp.setLine1(statrand + 4);
+                    break;
+                case 2:
+                    eqp.setLine2(statrand + 4);
+                    break;
+                case 3:
+                    eqp.setLine3(statrand + 4);
+                    break;
+            }
+        }
+        if (potrand > 20 && potrand < 25) {
+            switch (line) {
+                case 1:
+                    eqp.setLine1(statrand + 8);
+                    break;
+                case 2:
+                    eqp.setLine2(statrand + 8);
+                    break;
+                case 3:
+                    eqp.setLine3(statrand + 8);
+                    break;
+            }
+        }
+        if (potrand == 25) {
+            switch (line) {
+                case 1:
+                    eqp.setLine1(13);
+                    break;
+                case 2:
+                    eqp.setLine2(13);
+                    break;
+                case 3:
+                    eqp.setLine3(13);
+                    break;
+            }
+        }
+        if (potrand == 26) {
+            switch (line) {
+                case 1:
+                    eqp.setLine1(14);
+                    break;
+                case 2:
+                    eqp.setLine2(14);
+                    break;
+                case 3:
+                    eqp.setLine3(14);
+                    break;
+            }
+        }
+        if (potrand == 27) {
+            switch (line) {
+                case 1:
+                    eqp.setLine1(15);
+                    break;
+                case 2:
+                    eqp.setLine2(15);
+                    break;
+                case 3:
+                    eqp.setLine3(15);
+                    break;
+            }
+        }
+        return eqp;
+    }
+
+    public void openShopById(int id) {
+        MapleShopFactory.getInstance().getShopById(id).sendShop(getClient());
+    }
+
+    public void openNpcShop(int id) {
+        MapleShopFactory.getInstance().getShopForNPC(id).sendShop(getClient());
+    }
+
+    public int getBossLog(String bossid) {
+        return getPlayer().getBossLog(bossid);
+    }
+
+    public int getGiftLog(String bossid) {
+        return getPlayer().getGiftLog(bossid);
+    }
+
+    public void setBossLog(String bossid) {
+        getPlayer().setBossLog(bossid);
+    }
+
+    public String ranking() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("SELECT characters.name, characters.reborns, characters.dps, guilds.name AS guildname FROM characters, guilds WHERE characters.guildid = guilds.guildid AND characters.gm = 0 AND characters.banned = 0 ORDER BY characters.reborns DESC, characters.level DESC LIMIT 50");
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            String rank = "";
+            while (rs.next()) {
+                i++;
+                if (rs.getString("guildname") != null) {
+                    rank += (i + ".#r" + rs.getString("name") + "#n#k, #e#bReborns: #d" + rs.getInt("reborns") + "#k, #e#bDPS: #d" + rs.getInt("dps") + "#n#k, #e#bGuild: #d" + rs.getString("guildname") + "#k\r\n");
+                } else {
+                    rank += (i + ".#r" + rs.getString("name") + "#n#k, #e#bReborns: #d" + rs.getInt("reborns") + "#k, #e#bDPS: #d" + rs.getInt("dps") + "#n#k\r\n");
+                }
+            }
+            ps.close();
+            rs.close();
+            return rank;
+        } catch (SQLException e) {
+            return "Unknown error, please report this to the admin";
+        }
+    }
+
+    public void maxSkill(int id, int level, int masterlevel) {
+        maxSkill(id);
+    }
+
+    public void maxSkill(int id) {
+        ISkill skill = SkillFactory.getSkill(id);
+        getPlayer().changeSkillLevel(skill, (byte) skill.getMaxLevel(), skill.getMaxLevel(), -1);
+    }
+
+    public boolean addEquipAuction(byte slot, int ice, int black, int tear, int cloud, int meso, int vp, int shards) {
+        MapleInventory equipinv = getPlayer().getInventory(MapleInventoryType.EQUIP);
+        Equip eu = (Equip) equipinv.getItem(slot);
+        int item = equipinv.getItem(slot).getItemId();
+        int str = eu.getStr();
+        int dex = eu.getDex();
+        int int_ = eu.getInt();
+        int luk = eu.getLuk();
+        int hp = eu.getHp();
+        int mp = eu.getMp();
+        int watk = eu.getWatk();
+        int matk = eu.getMatk();
+        int wdef = eu.getWdef();
+        int mdef = eu.getMdef();
+        int acc = eu.getAcc();
+        int avoid = eu.getAvoid();
+        int hands = eu.getHands();
+        int speed = eu.getSpeed();
+        int jump = eu.getJump();
+        int locked = 0;
+        int vicious = eu.getVicious();
+        int itemlevel = eu.getItemLevel();
+        int itemexp = eu.getItemExp();
+        int ringid = eu.getRingId();
+        int upgradeslots = eu.getUpgradeSlots();
+        int line1 = eu.getLine1();
+        int line2 = eu.getLine2();
+        int line3 = eu.getLine3();
+        if (eu.getOwner().equals("")) {
+            MapleInventoryManipulator.removeFromSlot(c, equipinv.getType(), slot, (short) 1, false);
+            return AuctionSystemHandler.addEquipAuction(item, str, dex, int_, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, locked, vicious, itemlevel, itemexp, ringid, upgradeslots, line1, line2, line3, 0, ice, black, tear, cloud, meso, vp, shards, getClient());
+        } else {
+            return false;
+        }
+    }
+
+    public boolean addItemAuction(int inven, byte slot, int ice, int black, int tear, int cloud, int meso, int vp, int shards, int quantity) {
+        MapleInventory inventory = null;
+        if (inven == 1) {
+            inventory = getPlayer().getInventory(MapleInventoryType.USE);
+        }
+        if (inven == 2) {
+            inventory = getPlayer().getInventory(MapleInventoryType.SETUP);
+        }
+        if (inven == 3) {
+            inventory = getPlayer().getInventory(MapleInventoryType.ETC);
+        }
+        if (inven == 4) {
+            inventory = getPlayer().getInventory(MapleInventoryType.CASH);
+        }
+        int itemid = inventory.getItem(slot).getItemId();
+        if (inventory.getItem((byte) slot).getOwner().equals("") && !ItemConstants.isPet(itemid)) {
+            MapleInventoryManipulator.removeFromSlot(getClient(), inventory.getType(), slot, (short) quantity, false);
+            return AuctionSystemHandler.addItemAuction(itemid, quantity, ice, black, tear, cloud, meso, vp, shards, c);
+        } else {
+            return false;
+        }
+    }
+
+    public String getEquipAuctions() {
+        return AuctionSystemHandler.getEquipAuctions();
+    }
+
+    public String getEquipInfo(int id) {
+        if (id == 0) {
+            dispose();
+            return "";
+        }
+        if (AuctionSystemHandler.isExpired(id)) {
+            AuctionSystemHandler.deleteAuction(id);
+            dispose();
+            return "#rThe auction has expired. Therefore, it has been deleted.";
+        }
+        return AuctionSystemHandler.getEquipInfo(id);
+    }
+
+    public String getItemAuctions() {
+        return AuctionSystemHandler.getItemAuctions();
+    }
+
+    public String getItemInfo(int id) {
+        if (id == 0) {
+            dispose();
+            return "";
+        }
+        if (AuctionSystemHandler.isExpired(id)) {
+            AuctionSystemHandler.deleteAuction(id);
+            dispose();
+            return "#rThe auction has expired. Therefore, it has been deleted.";
+        }
+        return AuctionSystemHandler.getItemInfo(id);
+    }
+
+    public String getPrice(int id) {
+        return AuctionSystemHandler.getPrice(id);
+    }
+
+    public String showPoT(byte slot) {
+        String y = "";
+        MapleInventory equip = getPlayer().getInventory(MapleInventoryType.EQUIP);
+        Equip eu = (Equip) equip.getItem(slot);
+        int[] lines = {eu.getLine1(), eu.getLine2(), eu.getLine3()};
+        for (int i = 0; i < 3; i++) {
+            switch (lines[i]) {
+                case 0:
+                    break;
+                case 1:
+                    y += "\r\n2% STR";
+                    break;
+                case 2:
+                    y += "\r\n2% DEX";
+                    break;
+                case 3:
+                    y += "\r\n2% LUK";
+                    break;
+                case 4:
+                    y += "\r\n2% INT";
+                    break;
+                case 5:
+                    y += "\r\n4% STR";
+                    break;
+                case 6:
+                    y += "\r\n4% DEX";
+                    break;
+                case 7:
+                    y += "\r\n4% LUK";
+                    break;
+                case 8:
+                    y += "\r\n4% INT";
+                    break;
+                case 9:
+                    y += "\r\n6% STR";
+                    break;
+                case 10:
+                    y += "\r\n6% DEX";
+                    break;
+                case 11:
+                    y += "\r\n6% LUK";
+                    break;
+                case 12:
+                    y += "\r\n6% INT";
+                    break;
+                case 13:
+                    y += "\r\n82 M.ATT";
+                    break;
+                case 14:
+                    y += "\r\n76 W.ATT";
+                    break;
+                case 15:
+                    y += "\r\n6% TOTAL DAMAGE";
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (y.equals("")) {
+            y = "#r" + eu.getLines();
+        }
+        return y;
+    }
+
+    public String getDropboxInfo(int auctionid) {
+        return AuctionSystemHandler.getDropboxInfo(auctionid);
+    }
+
+    public String retriveDropbox(int auctionid) {
+        String ret = "#eThere was an error. Please report this to the administrator.";
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("SELECT * FROM dropbox WHERE auctionid = ?");
+            ps.setInt(1, auctionid);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int ice = rs.getInt("ice");
+                int black = rs.getInt("black");
+                int tear = rs.getInt("tear");
+                int cloud = rs.getInt("cloud");
+                int meso = rs.getInt("meso");
+                int vp = rs.getInt("vp");
+                int shards = rs.getInt("shards");
+                if (ice > 0) {
+                    gainItem(4000150, (short) ice);
+                }
+                if (black > 0) {
+                    gainItem(4031050, (short) black);
+                }
+                if (tear > 0) {
+                    gainItem(4000415, (short) tear);
+                }
+                if (cloud > 0) {
+                    gainItem(4001063, (short) cloud);
+                }
+                if (shards > 0) {
+                    gainItem(4031917, (short) shards);
+                }
+                if (meso > 0) {
+                    gainMeso(meso);
+                }
+                if (vp > 0) {
+                    getPlayer().addVotePT(vp);
+                }
+            }
+            PreparedStatement ps1 = con.prepareStatement("DELETE FROM dropbox WHERE auctionid = ?");
+            ps1.setInt(1, auctionid);
+            ps1.executeUpdate();
+            ps1.close();
+            ps.close();
+            rs.close();
+            ret = "#eThank you for using my service!";
+        } catch (Exception e) {
+            System.out.println("Exception at retriveDropbox(): " + e);
+        }
+        return ret;
+    }
+
+    public boolean retriveEquipAuction(int id, boolean addToDropbox) {
+        try {
+            if (AuctionSystemHandler.isExpired(id)) {
+                AuctionSystemHandler.deleteAuction(id);
+                dispose();
+                getPlayer().dropMessage(1, "The auction has expired, and therefore deleted.");
+                return false;
+            }
+            Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("SELECT * FROM auctions WHERE id = ?");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                if (addToDropbox) {
+                    AuctionSystemHandler.addToDropbox(id);
+                }
+                AuctionSystemHandler.deleteAuction(id);
+                gainFromAuction(rs.getInt("itemid"), rs.getInt("str"), rs.getInt("dex"), rs.getInt("int"), rs.getInt("luk"), rs.getInt("hp"), rs.getInt("mp"), rs.getInt("watk"), rs.getInt("matk"), rs.getInt("wdef"), rs.getInt("mdef"), rs.getInt("acc"), rs.getInt("avoid"), rs.getInt("hands"), rs.getInt("speed"), rs.getInt("jump"), rs.getInt("vicious"), rs.getInt("itemlevel"), rs.getInt("itemexp"), rs.getInt("ringid"), rs.getInt("upgradeslots"), rs.getInt("line1"), rs.getInt("line2"), rs.getInt("line3"));
+            }
+            ps.close();
+            rs.close();
+            return true;
+        } catch (Exception e) {
+            System.out.println("Exception at retriveEquipAuction(): " + e);
+        }
+        return false;
+    }
+
+    public String buyEquipAuction(int id) {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("SELECT * FROM auctions WHERE id = ?");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            String name = "";
+            while (rs.next()) {
+                name = MapleCharacter.getNameById(rs.getInt("cid"));
+                if (rs.getInt("cid") != getPlayer().getId()) {
+                    if (rs.getInt("type") == 1) {
+                        if (rs.getInt("ice") <= itemQuantity(4000150) && rs.getInt("shards") <= itemQuantity(4031917) && rs.getInt("black") <= itemQuantity(4031050) && rs.getInt("tear") <= itemQuantity(4000415) && rs.getInt("cloud") <= itemQuantity(4001063) && rs.getInt("meso") <= getMeso() && rs.getInt("vp") <= getPlayer().getVotePT()) {
+                            gainItem(4000150, (short) (-1 * rs.getInt("ice")));
+                            gainItem(4031050, (short) (-1 * rs.getInt("black")));
+                            gainItem(4000415, (short) (-1 * rs.getInt("tear")));
+                            gainItem(4001063, (short) (-1 * rs.getInt("cloud")));
+                            gainItem(4031917, (short) (-1 * rs.getInt("shards")));
+                            gainMeso((-1 * rs.getInt("meso")));
+                            getPlayer().takeVotePT(rs.getInt("vp"));
+                            retriveEquipAuction(id, true);
+                            getPlayer().sendNoteStat(name, "You auction (Auction ID - " + id + ") has been baught by " + getPlayer().getName() + "! Collect your income at the auction income dropbox NPC!", "Sharp", (byte) 0);
+                        } else {
+                            ps.close();
+                            rs.close();
+                            return "#r#eYou do not have enough wealth to purchase this item.";
+                        }
+                    }
+                } else {
+                    ps.close();
+                    rs.close();
+                    return "#e#rYou can't buy your own item.";
+                }
+            }
+            ps.close();
+            rs.close();
+            return "#b#eThank you for your purchase.";
+        } catch (Exception e) {
+            System.out.println("Exception at buyEquipAuction(): " + e);
+        }
+        return "Error";
+    }
+
+    public String getOwnedEquipAuctions() {
+        return AuctionSystemHandler.getOwnedEquipAuctions(c);
+    }
+
+    public String getOwnedItemAuctions() {
+        return AuctionSystemHandler.getOwnedItemAuctions(c);
+    }
+
+    public boolean retriveItemAuction(int id, boolean addToDropbox) {
+        try {
+            if (AuctionSystemHandler.isExpired(id)) {
+                AuctionSystemHandler.deleteAuction(id);
+                dispose();
+                getPlayer().dropMessage(1, "The auction has expired, and therefore deleted.");
+                return false;
+            }
+            Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("SELECT itemid, quantity FROM auctions WHERE id = ?");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                if (addToDropbox) {
+                    AuctionSystemHandler.addToDropbox(id);
+                }
+                gainItem(rs.getInt("itemid"), (short) rs.getInt("quantity"));
+                AuctionSystemHandler.deleteAuction(id);
+            }
+            ps.close();
+            rs.close();
+            return true;
+        } catch (Exception e) {
+            System.out.println("Exception at retriveItemAuction(): " + e);
+        }
+        return false;
+    }
+
+    public String buyItemAuction(int id) {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("SELECT ice, black, tear, cloud, meso, type, vp, shards, cid FROM auctions WHERE id = ?");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            String name = "";
+            while (rs.next()) {
+                name = MapleCharacter.getNameById(rs.getInt("cid"));
+                if (rs.getInt("cid") != getPlayer().getId()) {
+                    if (rs.getInt("type") == 2) {
+                        if (rs.getInt("ice") <= itemQuantity(4000150) && rs.getInt("shards") <= itemQuantity(4031917) && rs.getInt("black") <= itemQuantity(4031050) && rs.getInt("tear") <= itemQuantity(4000415) && rs.getInt("cloud") <= itemQuantity(4001063) && rs.getInt("meso") <= getMeso() && rs.getInt("vp") <= getPlayer().getVotePT()) {
+                            gainItem(4000150, (short) (-1 * rs.getInt("ice")));
+                            gainItem(4031050, (short) (-1 * rs.getInt("black")));
+                            gainItem(4000415, (short) (-1 * rs.getInt("tear")));
+                            gainItem(4001063, (short) (-1 * rs.getInt("cloud")));
+                            gainItem(4031917, (short) (-1 * rs.getInt("shards")));
+                            gainMeso((-1 * rs.getInt("meso")));
+                            getPlayer().takeVotePT(rs.getInt("vp"));
+                            retriveItemAuction(id, true);
+                            getPlayer().sendNoteStat(name, "You auction (Auction ID - " + id + ") has been baught by " + getPlayer().getName() + "!", "Sharp", (byte) 0);
+                        } else {
+                            ps.close();
+                            rs.close();
+                            return "#b#eYou do not have enough wealth to purchase this item.";
+                        }
+                    }
+                } else {
+                    ps.close();
+                    rs.close();
+                    return "#e#rYou can't buy your own item.";
+                }
+            }
+            ps.close();
+            rs.close();
+            return "#b#eThank you for your purchase.";
+        } catch (Exception e) {
+            System.out.println("Exception at retriveItemAuction(): " + e);
+        }
+        return "#r#eYou do not have enough wealth to purchase this item.";
+    }
+
+    public void addDeletedPet() {
+        try {
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("UPDATE custom set value = ? where id = 1");
+            ps.setInt(1, getDeletedPets() + 1);
+            ps.execute();
+            ps.close();
+        } catch (Exception e) {
+            System.out.println("Exception at addDeletedPets() -" + e);
+        }
+    }
+
+    public int getDeletedPets() {
+        try {
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT * from custom where id = 1");
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            int ret = rs.getInt("value");
+            rs.close();
+            ps.close();
+            return ret;
+        } catch (Exception e) {
+            System.out.println("Exception at getDeletedPets() -" + e);
+        }
+        return 0;
+    }
+
+    public String getDeletedPetsString() {
+        DecimalFormat df = new DecimalFormat();
+        DecimalFormatSymbols dfs = new DecimalFormatSymbols();
+        dfs.setGroupingSeparator(',');
+        df.setDecimalFormatSymbols(dfs);
+        return df.format(getDeletedPets());
+    }
+
+    public void deletePet(byte slot) {
+        getPlayer().unequipAllPets();
+        try {
+            int id = getPlayer().getInventory(MapleInventoryType.CASH).getItem(slot).getPet().getUniqueId();
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("DELETE from pets WHERE `petid` = ?");
+            ps.setInt(1, id);
+            MapleInventoryManipulator.removeFromSlot(c, MapleInventoryType.CASH, slot, (short) 1, false);
+            ps.executeUpdate();
+            ps.close();
+        } catch (Exception e) {
+        }
+        addDeletedPet();
+    }
+
+    public int slotQuantity(byte slot, int inven) {
+        MapleInventory inventory = null;
+        if (inven == 1) {
+            inventory = getPlayer().getInventory(MapleInventoryType.USE);
+        }
+        if (inven == 2) {
+            inventory = getPlayer().getInventory(MapleInventoryType.SETUP);
+        }
+        if (inven == 3) {
+            inventory = getPlayer().getInventory(MapleInventoryType.ETC);
+        }
+        if (inven == 4) {
+            inventory = getPlayer().getInventory(MapleInventoryType.CASH);
+        }
+        int itemid = inventory.getItem(slot).getItemId();
+        return getPlayer().getInventory(MapleItemInformationProvider.getInstance().getInventoryType(itemid)).countById(itemid);
+    }
+
+    public String getAvaliableHQS() {
+        return MapleGuild.getAvaliableHQS();
+    }
+
+    public String searchItemAuction(int id) {
+        String str = AuctionSystemHandler.searchItemAuction(id);
+        if (str.startsWith("#e#rAuction")) {
+            dispose();
+        }
+        return str;
+    }
+
+    public String searchEquipAuction(int id) {
+        String str = AuctionSystemHandler.searchEquipAuction(id);
+        if (str.startsWith("#e#rAuction")) {
+            dispose();
+        }
+        return str;
+    }
+
+    public void worldMessage(String x) {
+        Server.getInstance().broadcastMessage(getPlayer().getWorld(), MaplePacketCreator.serverNotice(6, x));
+    }
+
+    public void warpToRandomJQ() {
+        int jqmaps[] = {100000202, 220000006};
+        int rand = Randomizer.nextInt(jqmaps.length);
+        getPlayer().changeMap(jqmaps[rand]);
+    }
+
+    public String participateInEvent() {
+        if (getClient().getWorldServer().getParticipation(getPlayer().getName())) {
+            dispose();
+            return "#e#rYou have already participated in the event!!!";
+        } else {
+            getClient().getWorldServer().addEventParticipants(getPlayer().getName());
+            return "#e#rEnjoy!!";
+        }
+    }
+
+    public String eventReward() {
+        int jqmaps[] = {100000202, 220000006};
+        int rewards[] = {4, 4};
+        //respective to each other.
+
+        int index = 1337; // i thought intarray.indexOf(int value) existed, but then again, there can be duplicates.
+        for (int i = 0; i < jqmaps.length; i++) {
+            if (jqmaps[i] == getPlayer().getMap().getId()) {
+                index = i;
+            }
+        }
+        if (index == 1337) {
+            return "#eNice try, but you have to #rcomplete#k the #revent#k fairly to gain your reward!";
+        }
+        short trophies = (short) rewards[index];
+        gainItem(4000038, trophies);
+        return "#eYou gained #r" + trophies + "#k #bEvent Trophies#k! Come back next time!";
+    }
+
+    public String getDropbox() {
+        return AuctionSystemHandler.getDropbox(c);
+    }
+
+    public String spawnSuperMob(int mobid, int hpmpmultiplier, int expmultiplier) {
+        String ret = "";
+        if (getPlayer().getMap().getMonstersOnMap() > 9) {
+            ret = "#eThere cannot be more than 10 monsters in the guild hideout.";
+        } else {
+            MapleMonster monster = new MapleMonster(MapleLifeFactory.getMonster(mobid));
+            MapleMonsterStats newstats = new MapleMonsterStats(monster.getStats());
+            newstats.setHp(monster.getHp() * hpmpmultiplier);
+            newstats.setMp(monster.getMp() * hpmpmultiplier);
+            newstats.setExp(monster.getExp() * expmultiplier);
+            monster.setStats(newstats);
+            //getPlayer().getMap().spawnMonsterOnGroudBelow(monster, getPlayer().getMap().getNPCObject(this.getNpc()).getPosition());
+            getPlayer().getMap().spawnMonsterOnGroudBelow(monster, getPlayer().getPosition());
+            ret = "#e#rThank you for using my service.";
+        }
+        return ret;
+    }
+
+    public void killAllMonsters(int mapid) {
+        MapleMap map = c.getChannelServer().getMapFactory().getMap(mapid);
+        map.killAllMonsters(); // No drop.
+    }
+
+    public void clearDrops() {
+        getPlayer().getMap().clearDrops(getPlayer());
+    }
+
+    public String getMobName(int id) {
+        return MapleLifeFactory.getMonster(id).getName();
     }
 }

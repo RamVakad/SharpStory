@@ -38,63 +38,66 @@ function action(mode, type, selection) {
         return;
     }
     if (status == 0)
-        cm.sendSimple("Hello there! I'm #bLenario#k\r\n#b#L0#Can you please tell me what Guild Union is all about?#l\r\n#L1#How do I make a Guild Union?#l\r\n#L2#I want to make a Guild Union.#l\r\n#L3#I want to add more guilds for the Guild Union.#l\r\n#L4#I want to break up the Guild Union.#l");
+        cm.sendSimple("#eHello there! I'm #bLenario#k\r\n\
+\r\n\
+#fUI/UIWindow.img/QuestIcon/3/0#\r\n\
+#b#L0#Can you please tell me what Guild Union is all about?#l\r\n#L1#How do I make a Guild Union?#l\r\n#L2#I want to make a Guild Union.#l\r\n#L3#I want to add more guilds for the Guild Union.#l\r\n#L4#I want to break up the Guild Union.#l");
     else if (status == 1) {
         choice = selection;
         if (selection == 0) {
-            cm.sendNext("Guild Union is just as it says, a union of a number of guilds to form a super group. I am in charge of managing these Guild Unions.");
+            cm.sendNext("#eGuild Union is just as it says, a union of a number of guilds to form a super group. I am in charge of managing these Guild Unions.");
             cm.dispose();
         } else if (selection == 1) {
-            cm.sendNext("To make a Guild Union, 2 Guild Masters need to be in a party. The leader of this party will be assigned as the Guild Union Master.");
+            cm.sendNext("#eTo make a Guild Union, 2 Guild Masters need to be in a party. The leader of this party will be assigned as the Guild Union Master.");
             cm.dispose();
         } else if(selection == 2) {
-                cm.sendYesNo("Oh, are you interested in forming a Guild Union?");
+                cm.sendYesNo("#eOh, are you interested in forming a Guild Union?");
         } else if (selection == 3) {
             var rank = cm.getPlayer().getMGC().getAllianceRank();
             if (rank == 1)
-                cm.sendOk("Not done yet"); //ExpandGuild Text
+                cm.sendOk("#e#rNot done yet!"); //ExpandGuild Text
             else {
-                cm.sendNext("Only the Guild Union Master can expand the number of guilds in the Union.");
+                cm.sendNext("#e#rOnly the Guild Union Master can expand the number of guilds in the Union!");
                 cm.dispose();
             }
         } else if(selection == 4) {
             var rank = cm.getPlayer().getMGC().getAllianceRank();
             if (rank == 1)
-                cm.sendYesNo("Are you sure you want to disband your Guild Union?");
+                cm.sendYesNo("#eAre you sure you want to disband your Guild Union?");
             else {
-                cm.sendNext("Only the Guild Union Master may disband the Guild Union.");
+                cm.sendNext("#e#rOnly the Guild Union Master may disband the Guild Union!");
                 cm.dispose();
             }
         }
     } else if(status == 2) {
         if (choice == 2) {
-            cm.sendGetText("Now please enter the name of your new Guild Union. (max. 12 letters)");
+            cm.sendGetText("#eNow please enter the name of your new Guild Union. (Maximum 12 Letters)");
         } else if (choice == 4) {
             if (cm.getPlayer().getGuild() == null) {
-                cm.sendNext("You cannot disband a non-existant Guild Union.");
+                cm.sendNext("#e#rYou cannot disband a non-existant Guild Union!");
                 cm.dispose();
             } else if (cm.getPlayer().getGuild().getAllianceId() <= 0) {
-                cm.sendNext("You cannot disband a non-existant Guild Union.");
+                cm.sendNext("#e#rYou cannot disband a non-existant Guild Union!");
                 cm.dispose();
             } else {
                 cm.disbandAlliance(cm.getClient(), cm.getPlayer().getGuild().getAllianceId());
-                cm.sendOk("Your Guild Union has been disbanded.");
+                cm.sendOk("#eYour Guild Union has been disbanded.");
                 cm.dispose();
             }
         }
     } else if (status == 3) {
         guildName = cm.getText();
-        cm.sendYesNo("Will "+ guildName + " be the name of your Guild Union?");
+        cm.sendYesNo("#eAre you sure you want "+ guildName + " tp be the name of your Guild Union?");
     } else if (status == 4) {
         if (!cm.canBeUsedAllianceName(guildName)) {
-            cm.sendNext("This name is unavailable, please choose another one"); //Not real text
+            cm.sendNext("#e#rThis name is unavailable, please choose another one!"); //Not real text
             status = 1;
             choice = 2;
         } else {
             if (cm.createAlliance(partymembers.get(0), partymembers.get(1), guildName) == null)
-                cm.sendOk("An unknown system error has occured.");
+                cm.sendOk("#e#rAn unknown system error has occured!");
             else
-                cm.sendOk("You have successfully formed a Guild Union.");
+                cm.sendOk("#e#rYou have successfully formed a Guild Union!");
             cm.dispose();
         }
     }

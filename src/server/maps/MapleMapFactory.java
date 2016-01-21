@@ -1,24 +1,24 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package server.maps;
 
 import java.awt.Rectangle;
@@ -40,6 +40,7 @@ import java.sql.ResultSet;
 import tools.DatabaseConnection;
 
 public class MapleMapFactory {
+
     private MapleDataProvider source;
     private MapleData nameData;
     private Map<Integer, MapleMap> maps = new HashMap<Integer, MapleMap>();
@@ -83,9 +84,10 @@ public class MapleMapFactory {
                     map.addPortal(portalFactory.makePortal(MapleDataTool.getInt(portal.getChildByPath("pt")), portal));
                 }
                 MapleData timeMob = mapData.getChildByPath("info/timeMob");
-                if (timeMob != null)
-                    map.timeMob(MapleDataTool.getInt(timeMob.getChildByPath("id")), 
-                                MapleDataTool.getString(timeMob.getChildByPath("message")));
+                if (timeMob != null) {
+                    map.timeMob(MapleDataTool.getInt(timeMob.getChildByPath("id")),
+                            MapleDataTool.getString(timeMob.getChildByPath("message")));
+                }
 
                 List<MapleFoothold> allFootholds = new LinkedList<MapleFoothold>();
                 Point lBound = new Point();
@@ -130,6 +132,35 @@ public class MapleMapFactory {
                         map.addMapleArea(new Rectangle(x1, y1, (x2 - x1), (y2 - y1)));
                     }
                 }
+                try {
+                    PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT * FROM spawns WHERE mid = ?");
+                    ps.setInt(1, omapid);
+                    ResultSet rs = ps.executeQuery();
+                    while (rs.next()) {
+                        int id = rs.getInt("idd");
+                        int f = rs.getInt("f");
+                        boolean hide = false;
+                        String type = rs.getString("type");
+                        int fh = rs.getInt("fh");
+                        int cy = rs.getInt("cy");
+                        int rx0 = rs.getInt("rx0");
+                        int rx1 = rs.getInt("rx1");
+                        int x = rs.getInt("x");
+                        int y = rs.getInt("y");
+                        int mobTime = rs.getInt("mobtime");
+
+                        AbstractLoadedMapleLife myLife = giveLife(id, f, hide, fh, cy, rx0, rx1, x, y, type);
+
+                        if (type.equals("n")) {
+                            map.addMapObject(myLife);
+                        } else if (type.equals("m")) {
+                            MapleMonster monster = (MapleMonster) myLife;
+                            map.addMonsterSpawn(monster, mobTime, 0);
+                        }
+                    }
+                } catch (Exception e) {
+                    //to lazy to handle
+                }
                 try { // TODO, make better, perhaps for few maps only OKIDOKI!
                     PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT * FROM playernpcs WHERE map = ?");
                     ps.setInt(1, omapid);
@@ -144,7 +175,9 @@ public class MapleMapFactory {
                 for (MapleData life : mapData.getChildByPath("life")) {
                     String id = MapleDataTool.getString(life.getChildByPath("id"));
                     String type = MapleDataTool.getString(life.getChildByPath("type"));
-                    if (id.equals("9001105")) id = "9001108";//soz
+                    if (id.equals("9001105")) {
+                        id = "9001108";//soz
+                    }
                     AbstractLoadedMapleLife myLife = loadLife(life, id, type);
                     if (myLife instanceof MapleMonster) {
                         MapleMonster monster = (MapleMonster) myLife;
@@ -274,5 +307,17 @@ public class MapleMapFactory {
 
     public Map<Integer, MapleMap> getMaps() {
         return maps;
+    }
+
+    private AbstractLoadedMapleLife giveLife(int id, int f, boolean hide, int fh, int cy, int rx0, int rx1, int x, int y, String type) {
+        AbstractLoadedMapleLife myLife = MapleLifeFactory.getLife(id, type);
+        myLife.setCy(cy);
+        myLife.setF(f);
+        myLife.setFh(fh);
+        myLife.setRx0(rx0);
+        myLife.setRx1(rx1);
+        myLife.setPosition(new Point(x, y));
+        myLife.setHide(hide);
+        return myLife;
     }
 }

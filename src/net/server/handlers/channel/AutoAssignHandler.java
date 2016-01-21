@@ -35,7 +35,7 @@ import tools.data.input.SeekableLittleEndianAccessor;
 public class AutoAssignHandler extends AbstractMaplePacketHandler {
 
     public void handlePacket(SeekableLittleEndianAccessor slea, MapleClient c) {
-        MapleCharacter chr = c.getPlayer();
+        /*MapleCharacter chr = c.getPlayer();
         slea.skip(8);
         if (chr.getRemainingAp() < 1) {
             return;
@@ -54,7 +54,8 @@ public class AutoAssignHandler extends AbstractMaplePacketHandler {
         int remainingAp = (chr.getRemainingAp() - total) + extras;
         chr.setRemainingAp(remainingAp);
         chr.updateSingleStat(MapleStat.AVAILABLEAP, remainingAp);
-        c.announce(MaplePacketCreator.enableActions());
+        c.announce(MaplePacketCreator.enableActions());*/
+        c.getPlayer().dropMessage(1, "Sorry, but you may not do this! Please use @[stat] [+/-][amt]");
     }
 
     private int gainStatByType(MapleCharacter chr, MapleStat type, int gain) {

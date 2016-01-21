@@ -73,7 +73,7 @@ function action(mode, type, selection) {
                                     cm.playSound("Party1/Clear");
                                     var prev = eim.setProperty("stage1clear","true",true);
                                     if (prev == null) {
-                                        cm.getGuild().gainGP(15);
+                                        if (cm.getGuild() != null) cm.getGuild().gainGP(15);
                                     }
                                 } else {
                                                                         

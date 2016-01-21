@@ -42,13 +42,13 @@ import tools.data.input.SeekableLittleEndianAccessor;
  */
 public final class ItemPickupHandler extends AbstractMaplePacketHandler {
     public final void handlePacket(final SeekableLittleEndianAccessor slea, final MapleClient c) {
-        slea.readInt(); //Timestamp
+        slea.readInt(); //Timestamp //wow, i wonder what they do with this...
         slea.readByte();
         Point cpos = slea.readPos();
         int oid = slea.readInt();
         MapleCharacter chr = c.getPlayer();
         MapleMapObject ob = chr.getMap().getMapObject(oid);
-        if (chr.getInventory(MapleItemInformationProvider.getInstance().getInventoryType(ob.getObjectId())).getNextFreeSlot() > -1) {
+        if (chr != null && chr.getInventory(MapleItemInformationProvider.getInstance().getInventoryType(ob.getObjectId())).getNextFreeSlot() > -1) {
             if (chr.getMapId() > 209000000 && chr.getMapId() < 209000016) {//happyville trees
                 MapleMapItem mapitem = (MapleMapItem) ob;
                 if (mapitem.getDropper().getObjectId() == c.getPlayer().getObjectId()) {

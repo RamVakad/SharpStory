@@ -42,7 +42,6 @@ public final class ChangeMapHandler extends AbstractMaplePacketHandler {
         if (chr.isBanned()) {
             return;
         }
-
         if (slea.available() == 0) { //Cash Shop :)
             String[] socket = c.getChannelServer().getIP().split(":");
             chr.saveToDB(true);

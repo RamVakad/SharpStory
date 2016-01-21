@@ -28,6 +28,7 @@ import client.BuddylistEntry;
 import client.MapleCharacter;
 import client.MapleFamily;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,7 +49,8 @@ import tools.MaplePacketCreator;
  */
 public class World {
 
-    private byte id, flag, exprate, droprate, mesorate, bossdroprate;
+    private byte id, flag, droprate, bossdroprate;
+    private int exprate,  mesorate;
     private String eventmsg;
     private List<Channel> channels = new ArrayList<Channel>();
     private Map<Integer, MapleParty> parties = new HashMap<Integer, MapleParty>();
@@ -58,8 +60,10 @@ public class World {
     private Map<Integer, MapleFamily> families = new LinkedHashMap<Integer, MapleFamily>();
     private Map<Integer, MapleGuildSummary> gsStore = new HashMap<Integer, MapleGuildSummary>();
     private PlayerStorage players = new PlayerStorage();
+    private PlayerStorage noobs = new PlayerStorage();
+    private List<String> lastEventParticipants = new ArrayList<String>();
 
-    public World(byte world, byte flag, String eventmsg, byte exprate, byte droprate, byte mesorate, byte bossdroprate) {
+    public World(byte world, byte flag, String eventmsg, int exprate, byte droprate, int mesorate, byte bossdroprate) {
         this.id = world;
         this.flag = flag;
         this.eventmsg = eventmsg;
@@ -67,8 +71,10 @@ public class World {
         this.droprate = droprate;
         this.mesorate = mesorate;
         this.bossdroprate = bossdroprate;
-        runningPartyId.set(1);
-        runningMessengerId.set(1);
+        this.runningPartyId.set(1);
+        this.runningMessengerId.set(1);
+        System.out.println("");
+        System.out.println("");
     }
 
     public List<Channel> getChannels() {
@@ -99,11 +105,11 @@ public class World {
         return eventmsg;
     }
 
-    public byte getExpRate() {
+    public int getExpRate() {
         return exprate;
     }
 
-    public void setExpRate(byte exp) {
+    public void setExpRate(int exp) {
         this.exprate = exp;
     }
 
@@ -115,11 +121,11 @@ public class World {
         this.droprate = drop;
     }
 
-    public byte getMesoRate() {
+    public int getMesoRate() {
         return mesorate;
     }
 
-    public void setMesoRate(byte meso) {
+    public void setMesoRate(int meso) {
         this.mesorate = meso;
     }
 
@@ -132,8 +138,11 @@ public class World {
     }
 
     public void removePlayer(MapleCharacter chr) {
-        channels.get(chr.getClient().getChannel() - 1).removePlayer(chr);
+        for (int i = 0; i < channels.size(); i++) {
+            channels.get(i).removePlayer(chr);
+        }
         players.removePlayer(chr.getId());
+        noobs.removePlayer(chr.getId());
     }
 
     public byte getId() {
@@ -245,14 +254,14 @@ public class World {
     }
 
     public void sendPacket(List<Integer> targetIds, MaplePacket packet, int exception) {
-        MapleCharacter c;
+        MapleCharacter chr;
         for (int i : targetIds) {
             if (i == exception) {
                 continue;
             }
-            c = getPlayerStorage().getCharacterById(i);
-            if (c != null) {
-                c.getClient().getSession().write(packet);
+            chr = getPlayerStorage().getCharacterById(i);
+            if (chr != null && chr.getClient() != null && chr.getClient().getSession() != null && packet != null) {
+                chr.getClient().getSession().write(packet);
             }
         }
     }
@@ -283,15 +292,19 @@ public class World {
                     chr.setParty(party);
                     chr.setMPC(partychar);
                 }
-                chr.getClient().getSession().write(MaplePacketCreator.updateParty(chr.getClient().getChannel(), party, operation, target));
+                if (chr.getClient().getSession() != null) {
+                    chr.getClient().getSession().write(MaplePacketCreator.updateParty(chr.getClient().getChannel(), party, operation, target));
+                }
             }
         }
         switch (operation) {
             case LEAVE:
             case EXPEL:
                 MapleCharacter chr = getPlayerStorage().getCharacterByName(target.getName());
-                if (chr != null) {
+                if (chr.getClient().getSession() != null) {
                     chr.getClient().getSession().write(MaplePacketCreator.updateParty(chr.getClient().getChannel(), party, operation, target));
+                }
+                if (chr != null) {
                     chr.setParty(null);
                     chr.setMPC(null);
                 }
@@ -360,7 +373,7 @@ public class World {
         PlayerStorage playerStorage = getPlayerStorage();
         for (int characterId : recipientCharacterIds) {
             MapleCharacter chr = playerStorage.getCharacterById(characterId);
-            if (chr != null) {
+            if (chr != null && chr.getClient() != null) {
                 if (chr.getBuddylist().containsVisible(cidFrom)) {
                     chr.getClient().getSession().write(MaplePacketCreator.multiChat(nameFrom, chattext, 0));
                 }
@@ -574,7 +587,9 @@ public class World {
                         mcChannel = (byte) (channel - 1);
                     }
                     chr.getBuddylist().put(ble);
-                    chr.getClient().getSession().write(MaplePacketCreator.updateBuddyChannel(ble.getCharacterId(), mcChannel));
+                    if (chr != null && chr.getClient() != null && chr.getClient().getSession() != null) {
+                        chr.getClient().getSession().write(MaplePacketCreator.updateBuddyChannel(ble.getCharacterId(), mcChannel));
+                    }
                 }
             }
         }
@@ -597,5 +612,67 @@ public class World {
             ch.shutdown();
         }
         players.disconnectAll();
+    }
+
+    public PlayerStorage getNoobStorage() {
+        return noobs;
+    }
+
+    public void addEventParticipants(String chrname) {
+        lastEventParticipants.add(chrname);
+    }
+
+    public boolean getParticipation(String chrname) {
+        if (lastEventParticipants.contains(chrname)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void broadcastGMPacket(MaplePacket data) {
+        for (MapleCharacter chr : players.getAllCharacters()) {
+            if (chr.isGM()) {
+                chr.announce(data);
+            }
+        }
+    }
+
+    public void clearEventParticipants() {
+        lastEventParticipants.clear();
+    }
+    
+    public void DPSRanking(MapleCharacter chr) {
+        try {
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT name, dps FROM characters WHERE gm = 0 AND banned = 0 ORDER BY dps DESC LIMIT 10");
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            chr.dropMessage("=================================DPS Ranking=================================");
+            while (rs.next()) {
+                i++;
+                chr.dropMessage("Rank #" + i + " : " + rs.getString("name") + "    ..::~~~~::..    DPS: " + rs.getInt("dps"));
+            }
+            ps.close();
+            rs.close();
+        } catch (Exception e) {
+            System.out.println("Exception caught at DPSRanking(): " +e);
+        }
+    }
+    
+    public void AllRanking(MapleCharacter chr) {
+        try {
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT name, reborns FROM characters WHERE gm = 0 AND banned = 0 ORDER BY reborns DESC LIMIT 10");
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            chr.dropMessage("=================================Overall Ranking===============================");
+            while (rs.next()) {
+                i++;
+                chr.dropMessage("Rank #" + i + " : " + rs.getString("name") + "    ..::~~~~::..    Rebirths: " + rs.getInt("reborns"));
+            }
+            ps.close();
+            rs.close();
+        } catch (Exception e) {
+            System.out.println("Exception caught at AllRanking(): " +e);
+        }
     }
 }

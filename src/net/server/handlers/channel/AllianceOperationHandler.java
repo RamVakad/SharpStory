@@ -43,7 +43,7 @@ public final class AllianceOperationHandler extends AbstractMaplePacketHandler {
             alliance = Server.getInstance().getAlliance(c.getPlayer().getGuild().getAllianceId());
         }
         if (alliance == null) {
-            c.getPlayer().dropMessage("You are not in an alliance.");
+            c.getPlayer().dropMessage("[Alliance] You are not in an alliance.");
             c.announce(MaplePacketCreator.enableActions());
             return;
         } else if (c.getPlayer().getMGC().getAllianceRank() > 2 || !alliance.getGuilds().contains(c.getPlayer().getGuildId())) {
@@ -65,13 +65,13 @@ public final class AllianceOperationHandler extends AbstractMaplePacketHandler {
                     String charName = slea.readMapleAsciiString();
                     byte channel = c.getWorldServer().find(charName);
                     if (channel == -1) {
-                        c.getPlayer().dropMessage("The player is not online.");
+                        c.getPlayer().dropMessage("[Alliance] The player is not online.");
                     } else {
                         MapleCharacter victim = Server.getInstance().getChannel(c.getWorld(), channel).getPlayerStorage().getCharacterByName(charName);
                         if (victim.getGuildId() == 0) {
-                            c.getPlayer().dropMessage("The person you are trying to invite does not have a guild.");
+                            c.getPlayer().dropMessage("[Alliance] The person you are trying to invite does not have a guild.");
                         } else if (victim.getGuildRank() != 1) {
-                            c.getPlayer().dropMessage("The player is not the leader of his/her guild.");
+                            c.getPlayer().dropMessage("[Alliance] The player is not the leader of his/her guild.");
                         } else {
                             Server.getInstance().allianceMessage(alliance.getId(), sendInvitation(c.getPlayer().getGuild().getAllianceId(), c.getPlayer().getId(), slea.readMapleAsciiString()), -1, -1);
                         }
@@ -122,7 +122,7 @@ public final class AllianceOperationHandler extends AbstractMaplePacketHandler {
                     Server.getInstance().allianceMessage(alliance.getId(), MaplePacketCreator.allianceNotice(alliance.getId(), notice), -1, -1);
                     break;
                 default:
-                    c.getPlayer().dropMessage("Feature not available");
+                    c.getPlayer().dropMessage("[Alliance] Feature not available");
             }
             alliance.saveToDB();
     }

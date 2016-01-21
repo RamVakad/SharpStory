@@ -40,6 +40,7 @@ public final class KeymapChangeHandler extends AbstractMaplePacketHandler {
                 int action = slea.readInt();
                 ISkill skill = SkillFactory.getSkill(action);
                 if (skill != null && c.getPlayer().getSkillLevel(skill) < 1) {
+                    System.out.println(c.getPlayer().getName() + " tried to keymap a skill that he does not have.");
                     continue;
                 }
                 c.getPlayer().changeKeybinding(key, new MapleKeyBinding(type, action));

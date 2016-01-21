@@ -69,7 +69,7 @@ function action(mode, type, selection) {
             }
         }
         else if (status == 1) {
-            cm.getGuild().gainGP(30);
+            if (cm.getGuild() != null) cm.getGuild().gainGP(30);
             cm.getPlayer().getMap().getReactorByName("ghostgate").hitReactor(cm.getClient());
             cm.showEffect("quest/party/clear");
             cm.playSound("Party1/Clear");

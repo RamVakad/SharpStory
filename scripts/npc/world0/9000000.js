@@ -27,7 +27,9 @@
 var status = 0;
 
 function start() {
-    cm.sendNext("Hey, I'm #bPaul#k, if you're not busy and all ... then can I hang out with you? I heard there are people gathering up around here for an #revent#k but I don't want to go there by myself ... Well, do you want to go check it out with me?");
+    cm.sendOk("#eHey. Bye.");
+    cm.dispose();
+//cm.sendNext("Hey, I'm #bPaul#k, if you're not busy and all ... then can I hang out with you? I heard there are people gathering up around here for an #revent#k but I don't want to go there by myself ... Well, do you want to go check it out with me?");
 }
 
 function action(mode, type, selection) {

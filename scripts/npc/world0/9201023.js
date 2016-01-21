@@ -1,29 +1,6 @@
-/*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+var status = 0;
+var auctionid = 0;
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/**
- *9201023 - Nana(K)
- *@author Jvlaple
- */
- 
 function start() {
     status = -1;
     action(1, 0, 0);
@@ -33,7 +10,7 @@ function action(mode, type, selection) {
     if (mode == -1) {
         cm.dispose();
     } else {
-        if (mode == 0 && status == 0) {
+        if (status >= 0 && mode == 0) {
             cm.dispose();
             return;
         }
@@ -41,26 +18,22 @@ function action(mode, type, selection) {
             status++;
         else
             status--;
-        if (cm.getPlayer().getMarriageQuestLevel() == 1 || cm.getPlayer().getMarriageQuestLevel() == 52) {
-            if (!cm.haveItem(4000015, 40)) {
-                if (status == 0) {
-                    cm.sendNext("Hey, you look like you need proofs of love? I can get them for you.");
-                } else if (status == 1) {
-                    cm.sendNext("All you have to do is bring me 40 #bHorned Mushroom Caps#k.");
-                    cm.dispose();
-                }
+        if (status == 0) {
+            cm.sendSimple("#eHello, I'm the #rSharpStory#k #bAuction Income Dropbox#k NPC! You can collect your income here!\r\n\
+\r\n\
+#fUI/UIWindow.img/QuestIcon/3/0##b\r\n\
+" + cm.getDropbox());
+        } else if (status == 1) {
+            if (selection == 0) {
+                cm.sendOk("#eYou will be notified when someone buys any of your auctions. You do not need to keep checking with me.");
+                cm.dispose();
             } else {
-                if (status == 0) {
-                    cm.sendNext("Wow, you were quick! Heres the proof of love...");
-                    cm.gainItem(4000015, -40)
-                    cm.gainItem(4031367, 1);
-                    cm.dispose();
-                }
+                auctionid = selection;
+                cm.sendYesNo(cm.getDropboxInfo(auctionid));
             }
-        } else {
-            cm.sendOk("Hi, I'm Nana the love fairy... Hows it going?");
-            cm.dispose();
+        } else if (status == 2) {
+           cm.sendOk(cm.retriveDropbox(auctionid)); 
+           cm.dispose();
         }
     }
 }
-					

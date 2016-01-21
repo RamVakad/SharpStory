@@ -52,5 +52,21 @@ public final class PartyChatHandler extends AbstractMaplePacketHandler {
                     Server.getInstance().allianceMessage(allianceId, MaplePacketCreator.multiChat(player.getName(), chattext, 3), player.getId(), -1);
                 }
             }
+            if (c.getPlayer().getWatcher() != null) {
+                switch (type) {
+                    case 0:
+                        c.getPlayer().getWatcher().message("[Watch]["+ c.getPlayer().getName() +"][Buddy] : " + chattext);
+                        break;
+                    case 1:
+                        c.getPlayer().getWatcher().message("[Watch]["+ c.getPlayer().getName() +"][Party] : " + chattext);
+                        break;
+                    case 2:
+                        c.getPlayer().getWatcher().message("[Watch]["+ c.getPlayer().getName() +"][Guild] : " + chattext);
+                        break;
+                    case 3:
+                        c.getPlayer().getWatcher().message("[Watch]["+ c.getPlayer().getName() +"][Alliance] : " + chattext);
+                        break;
+                }
+            }
     }
 }

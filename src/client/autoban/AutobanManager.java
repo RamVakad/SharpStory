@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package client.autoban;
 
 import client.MapleCharacter;
@@ -14,6 +13,7 @@ import java.util.Map;
  * @author kevintjuh93
  */
 public class AutobanManager {
+
     private MapleCharacter chr;
     private Map<AutobanFactory, Integer> points = new HashMap<AutobanFactory, Integer>();
     private Map<AutobanFactory, Long> lastTime = new HashMap<AutobanFactory, Long>();
@@ -23,7 +23,7 @@ public class AutobanManager {
     private long spam[] = new long[20];
     private int timestamp[] = new int[20];
     private byte timestampcounter[] = new byte[20];
-
+    private boolean alerted = false;
 
     public AutobanManager(MapleCharacter chr) {
         this.chr = chr;
@@ -35,17 +35,20 @@ public class AutobanManager {
                 points.put(fac, points.get(fac) / 2); //So the points are not completely gone.
             }
         }
-        if (fac.getExpire() != -1)
+        if (fac.getExpire() != -1) {
             lastTime.put(fac, System.currentTimeMillis());
-        
+        }
+
         if (points.containsKey(fac)) {
             points.put(fac, points.get(fac) + 1);
-        } else
+        } else {
             points.put(fac, 1);
+        }
 
-        if (points.get(fac) >= fac.getMaximum()) {
+        if (points.get(fac) >= fac.getMaximum() && !alerted) {
             chr.autoban("Autobanned for " + fac.name() + " ;" + reason, 1);
-            chr.sendPolice("You have been blocked by #bMooplePolice for the HACK reason#k.");
+            chr.sendPolice("You have been blocked by #bSharpPolice for the HACK reason#k.");
+            alerted = true;
         }
     }
 
@@ -57,14 +60,14 @@ public class AutobanManager {
         if (lastmisses == misses && misses > 6) {
             samemisscount++;
         }
-        if (samemisscount > 4)
+        if (samemisscount > 4) {
             chr.autoban("Autobanned for : " + misses + " Miss godmode", 1);
-        else if (samemisscount > 0)
-
-        this.lastmisses = misses;
+        } else if (samemisscount > 0) {
+            this.lastmisses = misses;
+        }
         this.misses = 0;
     }
-    
+
     //Don't use the same type for more than 1 thing
     public void spam(int type) {
         this.spam[type] = System.currentTimeMillis();
@@ -89,7 +92,7 @@ public class AutobanManager {
      * @return Timestamp checker
      */
     public void setTimestamp(int type, int time) {
-        if (this.timestamp[type] == time) {  
+        if (this.timestamp[type] == time) {
             this.timestampcounter[type]++;
             if (this.timestampcounter[type] > 3) {
                 chr.getClient().disconnect();

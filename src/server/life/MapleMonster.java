@@ -59,6 +59,7 @@ import tools.Pair;
 
 public class MapleMonster extends AbstractLoadedMapleLife {
 
+    private int belongsTo = -1;
     private MapleMonsterStats stats;
     private int hp, mp;
     private WeakReference<MapleCharacter> controller = new WeakReference<MapleCharacter>(null);
@@ -138,7 +139,7 @@ public class MapleMonster extends AbstractLoadedMapleLife {
         return stats.getExp();
     }
 
-    int getLevel() {
+    public int getLevel() {
         return stats.getLevel();
     }
 
@@ -265,15 +266,19 @@ public class MapleMonster extends AbstractLoadedMapleLife {
         }
         if (attacker.getHp() > 0) {
             int personalExp = exp;
+            if (attacker.getOccupationLevel() < 100) {
+                int occupationPersonalExp = (int) ((personalExp / attacker.getExpRate()));
+                attacker.gainOccEXP(occupationPersonalExp);
+            }
             if (exp > 0) {
                 Integer holySymbol = attacker.getBuffedValue(MapleBuffStat.HOLY_SYMBOL);
-                if (holySymbol != null) {
-                    if (numExpSharers == 1) {
-                        personalExp *= 1.0 + (holySymbol.doubleValue() / 500.0);
-                    } else {
-                        personalExp *= 1.0 + (holySymbol.doubleValue() / 100.0);
-                    }
+                /*if (holySymbol != null) {
+                if (numExpSharers == 1) {
+                personalExp *= 1.0 + (holySymbol.doubleValue() / 500.0); //No holy symbol ploxx xD
+                } else {
+                personalExp *= 1.0 + (holySymbol.doubleValue() / 100.0);
                 }
+                }*/
                 if (stati.containsKey(MonsterStatus.SHOWDOWN)) {
                     personalExp *= (stati.get(MonsterStatus.SHOWDOWN).getStati().get(MonsterStatus.SHOWDOWN).doubleValue() / 100.0 + 1.0);
                 }
@@ -288,7 +293,8 @@ public class MapleMonster extends AbstractLoadedMapleLife {
     }
 
     public MapleCharacter killBy(MapleCharacter killer) {
-        long totalBaseExpL = (this.getExp() * killer.getClient().getPlayer().getExpRate());
+        //long totalBaseExpL = (this.getExp() * killer.getExpRate());
+        long totalBaseExpL = this.getExp();
         int totalBaseExp = (int) (Math.min(Integer.MAX_VALUE, totalBaseExpL));
         AttackerEntry highest = null;
         int highdamage = 0;
@@ -634,7 +640,7 @@ public class MapleMonster extends AbstractLoadedMapleLife {
         if (getController() != null && !getController().isMapObjectVisible(this)) {
             getController().getClient().getSession().write(packet);
         }
-        timerManager.schedule(cancelTask, duration);
+        timerManager.schedule(cancelTask, skill.getDuration());
     }
 
     public boolean isBuffed(MonsterStatus status) {
@@ -763,7 +769,7 @@ public class MapleMonster extends AbstractLoadedMapleLife {
             if (damage >= hp) {
                 damage = hp - 1;
                 if (type == 1 || type == 2) {
-                    map.broadcastMessage(MaplePacketCreator.damageMonster(getObjectId(), damage), getPosition());
+                    map.broadcastMessage(MaplePacketCreator.damageMonster(getObjectId(), damage, chr.getName()), getPosition());
                     cancelTask.run();
                     status.getCancelTask().cancel(false);
                 }
@@ -771,7 +777,7 @@ public class MapleMonster extends AbstractLoadedMapleLife {
             if (hp > 1 && damage > 0) {
                 damage(chr, damage, false);
                 if (type == 1) {
-                    map.broadcastMessage(MaplePacketCreator.damageMonster(getObjectId(), damage), getPosition());
+                    map.broadcastMessage(MaplePacketCreator.damageMonster(getObjectId(), damage, chr.getName()), getPosition());
                 }
             }
         }
@@ -1121,5 +1127,23 @@ public class MapleMonster extends AbstractLoadedMapleLife {
         }
         controller.clear();
         this.controller = null;
+    }
+
+    public boolean belongsToSomeone() {
+        return this.belongsTo != -1;
+    }
+
+    public int getBelongsTo() {
+        return this.belongsTo;
+    }
+
+    public void setBelongTo(MapleCharacter chr) {
+        this.belongsTo = chr.getId();
+    }
+
+    public void setStats(MapleMonsterStats newstats) {
+        this.stats = newstats;
+        this.hp = stats.getHp();
+        this.mp = stats.getMp();
     }
 }

@@ -58,7 +58,7 @@ public final class WhisperHandler extends AbstractMaplePacketHandler {
         } else if (mode == 5) { // - /find
             String recipient = slea.readMapleAsciiString();
             MapleCharacter victim = c.getChannelServer().getPlayerStorage().getCharacterByName(recipient);
-            if (victim != null && c.getPlayer().gmLevel() >= victim.gmLevel()) {
+            if (victim != null && !victim.isHidden()) {
                 if (victim.getCashShop().isOpened()) {
                     c.announce(MaplePacketCreator.getFindReply(victim.getName(), -1, 2));
                 //} else if (victim.inMTS()) {

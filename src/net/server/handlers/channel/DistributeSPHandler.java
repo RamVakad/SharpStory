@@ -32,6 +32,7 @@ import tools.data.input.SeekableLittleEndianAccessor;
 
 public final class DistributeSPHandler extends AbstractMaplePacketHandler {
     public final void handlePacket(SeekableLittleEndianAccessor slea, MapleClient c) {
+        /*
         slea.readInt();
         int skillid = slea.readInt();
         MapleCharacter player = c.getPlayer();
@@ -65,5 +66,7 @@ public final class DistributeSPHandler extends AbstractMaplePacketHandler {
                 player.changeSkillLevel(hidden2, (byte) (curLevel + 1), player.getMasterLevel(hidden2), player.getSkillExpiration(hidden2));
             }
         }
+        */
+        c.getPlayer().dropMessage(1, "Sorry, but you may not do this!");
     }
 }

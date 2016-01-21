@@ -72,7 +72,7 @@ public class CommandHandler implements GMPacketHandler {
                     if (world.isConnected(user)) {
                         MapleCharacter chr = world.getPlayerStorage().getCharacterByName(user);
                         chr.ban(slea.readMapleAsciiString());
-                        chr.sendPolice("You have been blocked by #b" + session.getAttribute("NAME") + " #kfor the HACK reason.");
+                        //chr.sendPolice("You have been blocked by #b" + session.getAttribute("NAME") + " #kfor the HACK reason.");
                         session.write(GMPacketCreator.commandResponse((byte) 1));
                         return;
                     }

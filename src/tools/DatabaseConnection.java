@@ -45,8 +45,9 @@ public class DatabaseConnection {//gay
         static {
             try {
                 Class.forName("com.mysql.jdbc.Driver"); // touch the mysql driver
-            } catch (ClassNotFoundException e) {
+            } catch (Exception e) {
                 System.out.println("Could not locate the JDBC mysql driver.");
+                System.out.println("SQLException at TTheadLocalConnection (static): " + e);
             }
         }
 
@@ -59,8 +60,9 @@ public class DatabaseConnection {//gay
             //Fk u *n word*
             try {
                 return DriverManager.getConnection(url, user, pass);
-            } catch (SQLException sql) {
-                System.out.println("Could not create a SQL Connection object. Please make sure you've correctly configured the database properties inside constants/ServerConstants.java. MAKE SURE YOU COMPILED!");
+            } catch (Exception e) {
+                System.out.println("Could not create a SQL Connection object.");
+                System.out.println("SQLException at getConnection(): " + e);
                 return null;
             }
         }
@@ -72,8 +74,9 @@ public class DatabaseConnection {//gay
                 if (!con.isClosed()) {
                     return con;
                 }
-            } catch (SQLException sql) {
-                // Munch munch, we'll get a new connection. :)
+            } catch (Exception e) {
+                System.out.println("Could not return a SQL Connection object.");
+                System.out.println("SQLException at get() (Override): " + e);
             }
             con = getConnection();
             super.set(con);

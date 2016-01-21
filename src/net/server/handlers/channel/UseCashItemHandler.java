@@ -38,6 +38,7 @@ import client.SkillFactory;
 import constants.ItemConstants;
 import constants.skills.Aran;
 import java.sql.SQLException;
+import java.util.Calendar;
 import net.AbstractMaplePacketHandler;
 import net.server.Server;
 import scripting.npc.NPCScriptManager;
@@ -266,6 +267,15 @@ public final class UseCashItemHandler extends AbstractMaplePacketHandler {
             remove(c, itemId);
         } else if (itemType == 507) {
             boolean whisper;
+            long curTime = Calendar.getInstance().getTimeInMillis();
+                if (c.getPlayer().getDelay("SMEGA_SPAM") > curTime) {
+                    c.getSession().write(MaplePacketCreator.sendHint("#e[#rSharp#k]:: Please don't spam smegas!", 280, 5));
+                    return;
+                } else {
+                    Calendar futureCal = Calendar.getInstance();
+                    futureCal.set(Calendar.SECOND, Calendar.getInstance().get(Calendar.SECOND) + 2);
+                    c.getPlayer().addDelay("SMEGA_SPAM", futureCal.getTimeInMillis());
+                }
             switch (itemId / 1000 % 10) {
                 case 1: // Megaphone
                     if (player.getLevel() > 9) {
@@ -514,7 +524,7 @@ public final class UseCashItemHandler extends AbstractMaplePacketHandler {
             if (equip.getVicious() == 2 || c.getPlayer().getInventory(MapleInventoryType.CASH).findById(5570000) == null) {
                 return;
             }
-            equip.setVicious(equip.getVicious() + 1);
+            equip.setVicious((short) (equip.getVicious() + 1));
             equip.setUpgradeSlots(equip.getUpgradeSlots() + 1);
             remove(c, itemId);
             c.announce(MaplePacketCreator.enableActions());

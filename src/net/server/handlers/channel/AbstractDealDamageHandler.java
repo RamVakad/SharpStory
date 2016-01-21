@@ -210,6 +210,12 @@ public abstract class AbstractDealDamageHandler extends AbstractMaplePacketHandl
                         totDamageToOneMonster += eachd.intValue();
                     }
                     totDamage += totDamageToOneMonster;
+                    if (monster.belongsToSomeone()) { //smart
+                        if (monster.getBelongsTo() != player.getId()) {
+                            totDamage = 0;
+                            return;
+                        }
+                    }
                     player.checkMonsterAggro(monster);
                     if (player.getBuffedValue(MapleBuffStat.PICKPOCKET) != null && (attack.skill == 0 || attack.skill == Rogue.DOUBLE_STAB || attack.skill == Bandit.SAVAGE_BLOW || attack.skill == ChiefBandit.ASSAULTER || attack.skill == ChiefBandit.BAND_OF_THIEVES || attack.skill == Shadower.ASSASSINATE || attack.skill == Shadower.TAUNT || attack.skill == Shadower.BOOMERANG_STEP)) {
                         ISkill pickpocket = SkillFactory.getSkill(ChiefBandit.PICKPOCKET);
@@ -323,41 +329,8 @@ public abstract class AbstractDealDamageHandler extends AbstractMaplePacketHandl
                             monster.applyStatus(player, new MonsterStatusEffect(attackEffect.getMonsterStati(), theSkill, null, false), attackEffect.isPoison(), attackEffect.getDuration());
                         }
                     }
-                    if (player.getJob().equals(MapleJob.LEGEND) || player.getJob().isA(MapleJob.ARAN4)) {
-                        byte comboLevel = (byte) (player.getJob().equals(MapleJob.LEGEND) ? 10 : player.getSkillLevel(Aran.COMBO_ABILITY));
-                        if (comboLevel > 0) {
-                            final long currentTime = System.currentTimeMillis();
-                            short combo = 0;
-                            if (attack.skill == Aran.COMBO_SMASH || attack.skill == Aran.COMBO_PENRIL || attack.skill == Aran.COMBO_TEMPEST) {
-                                player.setCombo(combo);//WHY NOT USE COMBO LOL
-                            }
-                            for (Integer amount : onedList) {
-                                combo = player.getCombo();
-                                if ((currentTime - player.getLastCombo()) > 3000 && combo > 0) {
-                                    combo = 0;
-                                    player.cancelEffectFromBuffStat(MapleBuffStat.ARAN_COMBO);
-                                }
-                                combo++;
-                                switch (combo) {
-                                    case 10:
-                                    case 20:
-                                    case 30:
-                                    case 40:
-                                    case 50:
-                                    case 60:
-                                    case 70:
-                                    case 80:
-                                    case 90:
-                                    case 100:
-                                        if ((combo / 10) <= comboLevel) {
-                                            SkillFactory.getSkill(21000000).getEffect(combo / 10).applyComboBuff(player, combo);
-                                        }
-                                        break;
-                                }
-                                player.setCombo(combo);
-                            }
-                            player.setLastCombo(currentTime);
-                        }
+                    if (attack.skill == Aran.COMBO_SMASH || attack.skill == Aran.COMBO_PENRIL || attack.skill == Aran.COMBO_TEMPEST) {
+                        player.setCombo((short) 0);//WHY NOT USE COMBO LOL
                     }
                     if (attack.isHH && !monster.isBoss()) {
                         map.damageMonster(player, monster, monster.getHp() - 1);

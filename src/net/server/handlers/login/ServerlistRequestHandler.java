@@ -23,7 +23,11 @@ package net.server.handlers.login;
 
 import client.MapleClient;
 import constants.ServerConstants;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.AbstractMaplePacketHandler;
+import net.server.Channel;
 import net.server.Server;
 import net.server.World;
 import tools.MaplePacketCreator;
@@ -36,9 +40,13 @@ public final class ServerlistRequestHandler extends AbstractMaplePacketHandler {
     public final void handlePacket(SeekableLittleEndianAccessor slea, MapleClient c) {
         Server server = Server.getInstance();
         World world;
-        for (byte i = 0; i < Math.min(server.getLoad().size(), names.length); i++) {
+        for (byte i = 0; i < Math.min(server.getWorlds().size(), names.length); i++) {
             world = server.getWorld(i);
-            c.announce(MaplePacketCreator.getServerList(i, names[i], world.getFlag(), world.getEventMessage(), server.getLoad(i)));
+            Map<Byte, AtomicInteger> load = new HashMap<Byte, AtomicInteger>();
+            for (Channel ch : world.getChannels()) {
+                load.put(ch.getId(), new AtomicInteger(ch.getConnectedClients()));
+            }
+            c.announce(MaplePacketCreator.getServerList(i, names[i], world.getFlag(), world.getEventMessage(), load));
         }
         c.announce(MaplePacketCreator.getEndOfServerList());
         c.announce(MaplePacketCreator.selectWorld(0));//too lazy to make a check lol

@@ -21,8 +21,14 @@
 */
 package client;
 
+import constants.skills.Aran;
 import java.util.ArrayList;
 import java.util.List;
+
+import constants.skills.Buccaneer;
+import constants.skills.Pirate;
+import constants.skills.ThunderBreaker;
+import constants.skills.WindArcher;
 
 import server.MapleStatEffect;
 import server.life.Element;
@@ -71,6 +77,24 @@ public class Skill implements ISkill {
     @Override
     public boolean isBeginnerSkill() {
         return id % 10000000 < 10000;
+    }
+    
+    @Override
+    public boolean isGMSkill() {
+        if (id < 9000000 || id > 9120000) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public boolean isBuggedSkill() {
+        if (id == Pirate.DASH || id == ThunderBreaker.DASH || id == Buccaneer.SUPER_TRANSFORMATION || id == WindArcher.EAGLE_EYE || id == Aran.COMBO_TEMPEST) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

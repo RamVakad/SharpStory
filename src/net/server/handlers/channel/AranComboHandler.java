@@ -33,12 +33,13 @@ public class AranComboHandler extends AbstractMaplePacketHandler {
 
     @Override
     public void handlePacket(SeekableLittleEndianAccessor slea, MapleClient c) {
-        /*MapleCharacter player = c.getPlayer();
-        if (player.getJob().equals(MapleJob.LEGEND) || player.getJob().isA(MapleJob.ARAN4)) {
+        MapleCharacter player = c.getPlayer();
+        if (player.getJob().equals(MapleJob.LEGEND) || player.getJob().isA(MapleJob.ARAN1) || player.getJob().isA(MapleJob.ARAN2) || player.getJob().isA(MapleJob.ARAN3) || player.getJob().isA(MapleJob.ARAN4)) {
             final long currentTime = System.currentTimeMillis();
             short combo = player.getCombo();
-            if ((currentTime - player.getLastCombo()) > 3000 && combo > 0) {
-                combo = 0;
+            if ((currentTime - player.getLastCombo()) > 3500 && combo > 0) {
+                player.setCombo((short) 0);
+                combo = (short) 0;
                 player.cancelEffectFromBuffStat(MapleBuffStat.ARAN_COMBO);
             }
             combo++;
@@ -58,6 +59,6 @@ public class AranComboHandler extends AbstractMaplePacketHandler {
             }
             player.setLastCombo(currentTime);
             player.setCombo(combo);
-        }*/
+        }
     }
 }

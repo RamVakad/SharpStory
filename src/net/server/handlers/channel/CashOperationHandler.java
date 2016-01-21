@@ -61,11 +61,67 @@ public final class CashOperationHandler extends AbstractMaplePacketHandler {
             }
             if (action == 0x03) { // Item
                 IItem item = cItem.toItem();
-                cs.addToInventory(item);               
+                int itemid = item.getItemId();
+                if (itemid >= 5211000 && itemid <= 5211048
+                        || itemid >= 5360000 && itemid <= 5360014
+                        || itemid >= 5030000 && itemid <= 5030012
+                        || itemid >= 5140000 && itemid <= 5140006
+                        || itemid == 1912003 || itemid == 1902008
+                        || itemid == 1912004 || itemid == 1902009
+                        || itemid == 1902039 || itemid == 1912032
+                        || itemid == 1902011 || itemid == 1912007
+                        || itemid == 1912013 || itemid == 1902020
+                        || itemid == 1902012 || itemid == 1912008
+                        || itemid == 1912031 || itemid == 1902038
+                        || itemid == 9101925 || itemid == 9102065
+                        || itemid == 9102066 || itemid == 9101747
+                        || itemid == 9102106 || itemid == 9102107
+                        || itemid == 9101673 || itemid == 5360042
+                        || itemid == 1812000 || itemid == 1812006
+                        || itemid == 1812004 || itemid == 1812005
+                        || itemid == 1812001 || itemid == 1812005
+                        || itemid == 1812002 || itemid == 1812003
+                        || itemid == 1112000 || itemid == 5060000
+                        || itemid == 1812007 || itemid == 1832000
+                        || itemid == 5370000 || itemid == 5300000
+                        || itemid == 5300001 || itemid == 5300002
+                        || itemid == 5090000){
+                    c.getPlayer().dropMessage(1, "Sorry, but you may not purchase this item. It is restricted.");
+                    return;
+                }
+                cs.addToInventory(item);
                 c.announce(MaplePacketCreator.showBoughtCashItem(item, c.getAccID()));
             } else { // Package
                 List<IItem> cashPackage = CashItemFactory.getPackage(cItem.getItemId());
                 for (IItem item : cashPackage) {
+                    int itemid = item.getItemId();
+                    if (itemid >= 5211000 && itemid <= 5211048
+                        || itemid >= 5360000 && itemid <= 5360014
+                        || itemid >= 5030000 && itemid <= 5030012
+                        || itemid >= 5140000 && itemid <= 5140006
+                        || itemid == 1912003 || itemid == 1902008
+                        || itemid == 1912004 || itemid == 1902009
+                        || itemid == 1902039 || itemid == 1912032
+                        || itemid == 1902011 || itemid == 1912007
+                        || itemid == 1912013 || itemid == 1902020
+                        || itemid == 1902012 || itemid == 1912008
+                        || itemid == 1912031 || itemid == 1902038
+                        || itemid == 9101925 || itemid == 9102065
+                        || itemid == 9102066 || itemid == 9101747
+                        || itemid == 9102106 || itemid == 9102107
+                        || itemid == 9101673 || itemid == 5360042
+                        || itemid == 1812000 || itemid == 1812006
+                        || itemid == 1812004 || itemid == 1812005
+                        || itemid == 1812001 || itemid == 1812005
+                        || itemid == 1812002 || itemid == 1812003
+                        || itemid == 1112000 || itemid == 5060000
+                        || itemid == 1812007 || itemid == 1832000
+                        || itemid == 5370000 || itemid == 5300000
+                        || itemid == 5300001 || itemid == 5300002
+                        || itemid == 5090000) {
+                        c.getPlayer().dropMessage(1, "Sorry, buy you may not purchase this package. It contains a restricted item or items.");
+                        return;
+                    }
                     cs.addToInventory(item);
                 }
                 c.announce(MaplePacketCreator.showBoughtCashPackage(cashPackage, c.getAccID()));
@@ -99,7 +155,9 @@ public final class CashOperationHandler extends AbstractMaplePacketHandler {
             } catch (SQLException ex) {
             }
             MapleCharacter receiver = c.getChannelServer().getPlayerStorage().getCharacterByName(recipient.get("name"));
-            if (receiver != null) receiver.showNote();
+            if (receiver != null) {
+                receiver.showNotes();
+            }
         } else if (action == 0x05) { // Modify wish list
             cs.clearWishList();
             for (byte i = 0; i < 10; i++) {
@@ -162,18 +220,19 @@ public final class CashOperationHandler extends AbstractMaplePacketHandler {
                 }
             }
         } else if (action == 0x08) { // Increase Character Slots
-                slea.skip(1); 
-                int cash = slea.readInt();
-                CashItem cItem = CashItemFactory.getItem(slea.readInt());
+            slea.skip(1);
+            int cash = slea.readInt();
+            CashItem cItem = CashItemFactory.getItem(slea.readInt());
 
-                if (!canBuy(cItem, cs.getCash(cash)))
-                    return;
+            if (!canBuy(cItem, cs.getCash(cash))) {
+                return;
+            }
 
-                if (c.gainCharacterSlot()) {
-                    c.announce(MaplePacketCreator.showBoughtCharacterSlot(c.getCharacterSlots()));
-                    cs.gainCash(cash, -cItem.getPrice());
-                    c.announce(MaplePacketCreator.showCash(chr));
-                }
+            if (c.gainCharacterSlot()) {
+                c.announce(MaplePacketCreator.showBoughtCharacterSlot(c.getCharacterSlots()));
+                cs.gainCash(cash, -cItem.getPrice());
+                c.announce(MaplePacketCreator.showCash(chr));
+            }
         } else if (action == 0x0D) { // Take from Cash Inventory
             IItem item = cs.findByCashId(slea.readInt());
             if (item == null) {
@@ -205,10 +264,10 @@ public final class CashOperationHandler extends AbstractMaplePacketHandler {
                 if (partner == null) {
                     chr.getClient().announce(MaplePacketCreator.serverNotice(1, "The partner you specified cannot be found.\r\nPlease make sure your partner is online and in the same channel."));
                 } else {
-                    if (partner.getGender() == chr.getGender()) {
-                        chr.dropMessage("You and your partner are the same gender, please buy a friendship ring.");
-                        return;
-                    }
+                    //if (partner.getGender() == chr.getGender()) { // SharpStory accepts everyone!
+                    //chr.dropMessage("You and your partner are the same gender, please buy a friendship ring.");
+                    //return;
+                    //}
                     IEquip item = (IEquip) ring.toItem();
                     int ringid = MapleRing.createRing(ring.getItemId(), chr, partner);
                     item.setRingId(ringid);
@@ -221,7 +280,7 @@ public final class CashOperationHandler extends AbstractMaplePacketHandler {
                         chr.sendNote(partner.getName(), text, (byte) 1);
                     } catch (SQLException ex) {
                     }
-                    partner.showNote();
+                    partner.showNotes();
                 }
             } else {
                 chr.dropMessage("The birthday you entered was incorrect.");
@@ -263,7 +322,7 @@ public final class CashOperationHandler extends AbstractMaplePacketHandler {
                         chr.sendNote(partner.getName(), text, (byte) 1);
                     } catch (SQLException ex) {
                     }
-                    partner.showNote();
+                    partner.showNotes();
                 }
             } else {
                 chr.dropMessage("The birthday you entered was incorrect.");
@@ -285,6 +344,7 @@ public final class CashOperationHandler extends AbstractMaplePacketHandler {
     }
 
     public boolean canBuy(CashItem item, int cash) {
-        return item != null && item.isOnSale() && item.getPrice() <= cash;
+        //return item != null && item.isOnSale() && item.getPrice() <= cash;
+        return item != null && item.getPrice() <= cash;
     }
 }

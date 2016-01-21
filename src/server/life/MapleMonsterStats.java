@@ -49,6 +49,39 @@ public class MapleMonsterStats {
     private List<loseItem> loseItem = null;
     private selfDestruction selfDestruction = null;
 
+    public MapleMonsterStats() {
+    }
+    
+    public MapleMonsterStats(MapleMonsterStats base) {
+        this.exp = base.exp;
+        this.hp = base.hp;
+        this.mp = base.mp;
+        this.level = base.level;
+        this.PADamage = base.PADamage;
+        this.dropPeriod = base.dropPeriod;
+        this.cp = base.cp;
+        this.buffToGive = base.buffToGive;
+        this.removeAfter = base.removeAfter;
+        this.boss = base.boss;
+        this.undead = base.undead;
+        this.ffaLoot = base.ffaLoot;
+        this.isExplosiveReward = base.isExplosiveReward;
+        this.firstAttack = base.firstAttack;
+        this.removeOnMiss = base.removeOnMiss;
+        this.name = base.name;
+        this.animationTimes = base.animationTimes;
+        this.resistance = base.resistance;
+        this.revives = base.revives;
+        this.tagColor = base.tagColor;
+        this.tagBgColor = base.tagBgColor;
+        this.skills = base.skills;
+        this.cool = base.cool;
+        this.banish = base.banish;
+        this.loseItem = base.loseItem;
+        this.selfDestruction = base.selfDestruction;
+        
+    }
+    
     public int getExp() {
         return exp;
     }

@@ -1,24 +1,24 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package net.server.guild;
 
 import java.sql.Connection;
@@ -32,18 +32,23 @@ import java.util.Map;
 import java.util.Set;
 import client.MapleCharacter;
 import client.MapleClient;
+import java.util.Calendar;
 import java.util.LinkedList;
 import tools.DatabaseConnection;
 import net.MaplePacket;
 import net.server.Channel;
 import net.server.Server;
 import tools.MaplePacketCreator;
+import tools.PrintError;
 
 public class MapleGuild {
-    public final static int CREATE_GUILD_COST = 1500000;
-    public final static int CHANGE_EMBLEM_COST = 5000000;
+
+    public final static int CREATE_GUILD_COST = 2000000000;
+    public final static int CHANGE_EMBLEM_COST = 2000000000;
+    public final static int INCREASE_GUILD_COST = 2000000000;
 
     private enum BCOp {
+
         NONE, DISBAND, EMBELMCHANGE
     }
     private List<MapleGuildCharacter> members;
@@ -53,7 +58,6 @@ public class MapleGuild {
     private byte world;
     private Map<Byte, List<Integer>> notifications = new LinkedHashMap<Byte, List<Integer>>();
     private boolean bDirty = true;
-
 
     public MapleGuild(MapleGuildCharacter initiator) {
         int guildid = initiator.getGuildId();
@@ -127,7 +131,9 @@ public class MapleGuild {
                     continue;
                 }
                 List<Integer> ch = notifications.get(mgc.getChannel());
-                if (ch != null) ch.add(mgc.getId());
+                if (ch != null) {
+                    ch.add(mgc.getId());
+                }
                 //Unable to connect to Channel... error was here
             }
         }
@@ -159,6 +165,7 @@ public class MapleGuild {
                 ps.execute();
                 ps.close();
             } else {
+                this.checkAlliances();
                 PreparedStatement ps = con.prepareStatement("UPDATE characters SET guildid = 0, guildrank = 5 WHERE guildid = ?");
                 ps.setInt(1, this.id);
                 ps.execute();
@@ -170,6 +177,29 @@ public class MapleGuild {
                 this.broadcast(MaplePacketCreator.guildDisband(this.id));
             }
         } catch (SQLException se) {
+        }
+    }
+
+    public void checkAlliances() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("SELECT * FROM guild where allianceId = ?");
+            ps.setInt(1, this.allianceId);
+            ResultSet rs = ps.executeQuery();
+
+            int allianceGuilds = 0;
+            while (rs.next()) {
+                allianceGuilds++;
+            }
+
+            if (allianceGuilds <= 2) {
+                this.disbandAllianceExt(this.allianceId);
+            }
+
+            rs.close();
+            ps.close();
+        } catch (Exception e) {
+            System.out.println("Exception at checkAlliances():" + e);
         }
     }
 
@@ -265,8 +295,14 @@ public class MapleGuild {
                         }
                     }
                 }
-            } catch (Exception re) {
-                System.out.println("Failed to contact channel(s) for broadcast.");//fu?
+            } catch (Exception e) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(this.getName()).append(" guild failed to broadcast!.\r\n");
+                sb.append("----------------------------------------------------------------------------\r\n");
+                sb.append(tools.StringUtil.stackTraceToString(e)).append("\r\n");
+                sb.append("----------------------------------------------------------------------------\r\n");
+                PrintError.print(PrintError.GUILD_BROADCAST, sb.toString());
+                System.out.println("Failed to contact channel(s) for broadcast.");
             }
         }
     }
@@ -502,6 +538,14 @@ public class MapleGuild {
         this.gp += amount;
         this.writeToDB(false);
         this.guildMessage(MaplePacketCreator.updateGP(this.id, this.gp));
+        for (MapleGuildCharacter mgc : members) {
+            for (Channel cs : Server.getInstance().getChannelsFromWorld(world)) {
+                if (cs.getPlayerStorage().getCharacterById(mgc.getId()) != null) {
+                    cs.getPlayerStorage().getCharacterById(mgc.getId()).dropMessage(6, "[Guild]:: GP Update - " + this.gp + " Total Point(s) || (" + amount + ") Guild Point(s) have been gained!");
+                }
+            }
+        }
+
     }
 
     public static MapleGuildResponse sendInvite(MapleClient c, String targetName) {
@@ -544,7 +588,152 @@ public class MapleGuild {
         }
     }
 
-    public int getIncreaseGuildCost(int size) {
-        return 500000 * (size - 6) / 6;
+    public int getIncreaseGuildCost() {
+        return INCREASE_GUILD_COST;
+    }
+
+    public void dropMessage(String x) {
+        for (MapleGuildCharacter mgc : members) {
+            for (Channel cs : Server.getInstance().getChannelsFromWorld(world)) {
+                if (cs.getPlayerStorage().getCharacterById(mgc.getId()) != null) {
+                    cs.getPlayerStorage().getCharacterById(mgc.getId()).dropMessage(6, x);
+                }
+            }
+        }
+    }
+
+    public int getHideoutCost(int hqid) {
+        int cost = 9999;
+        try {
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT * from guildhq where hqid = ?");
+            ps.setInt(1, hqid);
+            ResultSet rs = ps.executeQuery();
+            rs.beforeFirst();
+            while (rs.next()) {
+                cost = rs.getInt("cost");
+            }
+            rs.close();
+            ps.close();
+            return cost;
+        } catch (Exception e) {
+            System.out.println("GETCost Exception -" + e);
+        }
+        return cost;
+    }
+
+    public String leaseHideout(int hqid) {
+        try {
+            if (getHideout() == 0 && isAvaliable(hqid)) {
+                PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("UPDATE guildhq set guildid = ?, expirestamp = ? WHERE hqid = ?");
+                ps.setInt(1, id);
+                ps.setLong(2, (Calendar.getInstance().getTimeInMillis() + (604800000)));
+                ps.setInt(3, hqid);
+                ps.executeUpdate();
+                ps.close();
+                for (MapleGuildCharacter mgc : members) {
+                    MapleCharacter.sendNoteStat(MapleCharacter.getNameById(mgc.getId()), "The guild leader has baught a headquarter for the guild. You should check it out by using command @guildhq.", "Sharp", (byte) 0);
+                }
+                return "#eThank you for renting your guild hideout! It will expire in one week!";
+            } else {
+                return "#eYou can't lease a hideout either because your guild already has one or you are trying to lease the same hideout that you leased before!";
+            }
+        } catch (Exception e) {
+        }
+        return "#eThank you for renting your guild hideout! It will expire in one week!";
+    }
+
+    public static String getAvaliableHQS() {
+        String x = "";
+        try {
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT * from guildhq");
+            ResultSet rs = ps.executeQuery();
+            rs.beforeFirst();
+            while (rs.next()) {
+                int hqid = rs.getInt("hqid");
+                if (isAvaliable(hqid)) {
+                    if (hqid >= 910000013 && hqid <= 910000022) {
+                        x += "#L" + hqid + "##rFree Market " + (hqid - 910000000) + "#k - #b" + rs.getInt("cost") + " Guild Points #k- #d7 Days\r\n";
+                    } else if (hqid == 910050000) {
+                        x += "#r#L" + hqid + "#God Quarters#k - #b " + rs.getInt("cost") + " Guild Points\r\n";
+                    } else {
+                        x += "#r#L" + hqid + "#King Quarters#k - #b " + rs.getInt("cost") + " Guild Points\r\n";
+                    }
+                }
+            }
+            rs.close();
+            ps.close();
+            return x;
+        } catch (Exception e) {
+            System.out.println("Ohlol " + e);
+        }
+        return x;
+    }
+
+    public static boolean isAvaliable(int hqid) {
+        boolean avaliable = false;
+        try {
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT * from guildhq where hqid = ?");
+            ps.setInt(1, hqid);
+            ResultSet rs = ps.executeQuery();
+            rs.beforeFirst();
+            while (rs.next()) {
+                if (Calendar.getInstance().getTimeInMillis() >= rs.getLong("expirestamp")) {
+                    avaliable = true;
+                }
+            }
+            rs.close();
+            ps.close();
+            return avaliable;
+        } catch (Exception e) {
+            System.out.println("Exception isAvaliable -" + e);
+        }
+        return avaliable;
+    }
+
+    public int getHideout() {
+        try {
+            PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("SELECT * from guildhq where guildid = ?");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            int hq = 0;
+            while (rs.next()) {
+                if (!isAvaliable(rs.getInt("hqid"))) {
+                    hq = rs.getInt("hqid");
+                }
+            }
+            rs.close();
+            ps.close();
+            return hq;
+        } catch (Exception e) {
+            System.out.println("gethideout Error" + e);
+        }
+        return 0;
+    }
+
+    public void disbandAllianceExt(int allianceId) {
+        PreparedStatement ps = null;
+        try {
+            ps = DatabaseConnection.getConnection().prepareStatement("UPDATE guilds SET allianceId = ? where allianceId = ?");
+            ps.setInt(1, allianceId);
+            ps.setInt(2, 0);
+            ps.execute();
+            ps.close();
+
+            ps = DatabaseConnection.getConnection().prepareStatement("DELETE FROM `alliance` WHERE id = ?");
+            ps.setInt(1, allianceId);
+            ps.executeUpdate();
+            ps.close();
+            Server.getInstance().allianceMessage(this.getAllianceId(), MaplePacketCreator.disbandAlliance(allianceId), -1, -1);
+            Server.getInstance().disbandAlliance(allianceId);
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        } finally {
+            try {
+                if (ps != null && !ps.isClosed()) {
+                    ps.close();
+                }
+            } catch (SQLException ex) {
+            }
+        }
     }
 }

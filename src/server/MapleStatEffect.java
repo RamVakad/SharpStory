@@ -1,24 +1,24 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package server;
 
 import java.awt.Point;
@@ -116,6 +116,7 @@ import server.maps.FieldLimit;
  * @author Frz
  */
 public class MapleStatEffect {
+
     private short watk, matk, wdef, mdef, acc, avoid, speed, jump;
     private short hp, mp;
     private double hpR, mpR;
@@ -133,7 +134,6 @@ public class MapleStatEffect {
     private int damage, attackCount, fixdamage;
     private Point lt, rb;
     private byte bulletCount, bulletConsume;
-
 
     public static MapleStatEffect loadSkillEffectFromData(MapleData source, int skillid, boolean overtime) {
         return loadFromData(source, skillid, true, overtime);
@@ -381,8 +381,8 @@ public class MapleStatEffect {
                 case ThunderBreaker.DASH:
                 case Beginner.SPACE_DASH:
                 case Noblesse.SPACE_DASH:
-		    statups.add(new Pair<MapleBuffStat, Integer>(MapleBuffStat.DASH2, Integer.valueOf(ret.x)));
-		    statups.add(new Pair<MapleBuffStat, Integer>(MapleBuffStat.DASH, Integer.valueOf(ret.y)));
+                    statups.add(new Pair<MapleBuffStat, Integer>(MapleBuffStat.DASH2, Integer.valueOf(ret.x)));
+                    statups.add(new Pair<MapleBuffStat, Integer>(MapleBuffStat.DASH, Integer.valueOf(ret.y)));
                     break;
                 case Corsair.SPEED_INFUSION:
                 case Buccaneer.SPEED_INFUSION:
@@ -494,9 +494,9 @@ public class MapleStatEffect {
                     break;
                 case NightLord.TAUNT:
                 case Shadower.TAUNT:
-		    monsterStatus.put(MonsterStatus.SHOWDOWN, ret.x);
-		    monsterStatus.put(MonsterStatus.MDEF, ret.x);
-		    monsterStatus.put(MonsterStatus.WDEF, ret.x);
+                    monsterStatus.put(MonsterStatus.SHOWDOWN, ret.x);
+                    monsterStatus.put(MonsterStatus.MDEF, ret.x);
+                    monsterStatus.put(MonsterStatus.WDEF, ret.x);
                     break;
                 case ILWizard.COLD_BEAM:
                 case ILMage.ICE_STRIKE:
@@ -535,7 +535,7 @@ public class MapleStatEffect {
                     monsterStatus.put(MonsterStatus.FREEZE, Integer.valueOf(1));
                     break;
                 //ARAN
-                case Aran.COMBO_ABILITY: 
+                case Aran.COMBO_ABILITY:
                     statups.add(new Pair<MapleBuffStat, Integer>(MapleBuffStat.ARAN_COMBO, 100));
                     break;
                 case Aran.COMBO_BARRIER:
@@ -635,7 +635,7 @@ public class MapleStatEffect {
             applyto.setCombo((short) 0);
         }
         /*if (applyfrom.getMp() < getMpCon()) {
-            AutobanFactory.MPCON.addPoint(applyfrom.getAutobanManager(), "mpCon hack for skill:" + sourceid + "; Player MP: " + applyto.getMp() + " MP Needed: " + getMpCon());
+        AutobanFactory.MPCON.addPoint(applyfrom.getAutobanManager(), "mpCon hack for skill:" + sourceid + "; Player MP: " + applyto.getMp() + " MP Needed: " + getMpCon());
         } */
         if (hpchange != 0) {
             if (hpchange < 0 && (-hpchange) > applyto.getHp()) {
@@ -650,8 +650,10 @@ public class MapleStatEffect {
         }
         int newMp = applyto.getMp() + mpchange;
         if (mpchange != 0) {
-            if (mpchange < 0 && -mpchange > applyto.getMp()) return false;
-            
+            if (mpchange < 0 && -mpchange > applyto.getMp()) {
+                return false;
+            }
+
             applyto.setMp(newMp);
             hpmpupdate.add(new Pair<MapleStat, Integer>(MapleStat.MP, Integer.valueOf(applyto.getMp())));
         }
@@ -669,8 +671,10 @@ public class MapleStatEffect {
                     }
                 }
                 applyto.changeMap(target);
-            } else return false;
-            
+            } else {
+                return false;
+            }
+
         }
         if (isShadowClaw()) {
             int projectile = 0;
@@ -684,23 +688,30 @@ public class MapleStatEffect {
                     }
                 }
             }
-            if (projectile == 0) return false;
-            else MapleInventoryManipulator.removeById(applyto.getClient(), MapleInventoryType.USE, projectile, 200, false, true);
-            
+            if (projectile == 0) {
+                return false;
+            } else {
+                MapleInventoryManipulator.removeById(applyto.getClient(), MapleInventoryType.USE, projectile, 200, false, true);
+            }
+
         }
         SummonMovementType summonMovementType = getSummonMovementType();
-        if (overTime || isCygnusFA() || summonMovementType != null)
+        if (overTime || isCygnusFA() || summonMovementType != null) {
             applyBuffEffect(applyfrom, applyto, primary);
-        
-        if (primary && (overTime || isHeal())) 
+        }
+
+        if (primary && (overTime || isHeal())) {
             applyBuff(applyfrom);
-        
-        if (primary && isMonsterBuff()) 
+        }
+
+        if (primary && isMonsterBuff()) {
             applyMonsterBuff(applyfrom);
-        
-        if (this.getFatigue() != 0) 
+        }
+
+        if (this.getFatigue() != 0) {
             applyto.getMount().setTiredness(applyto.getMount().getTiredness() + this.getFatigue());
-        
+        }
+
         if (summonMovementType != null && pos != null) {
             final MapleSummon tosummon = new MapleSummon(applyfrom, sourceid, pos, summonMovementType);
             applyfrom.getMap().spawnSummon(tosummon);
@@ -806,22 +817,26 @@ public class MapleStatEffect {
                 chr.addSummon(sourceid, tosummon);
                 tosummon.addHP(x);
             }
-        } 
-        if (sourceid == Corsair.BATTLE_SHIP) chr.announce(MaplePacketCreator.skillCooldown(5221999, chr.getBattleshipHp()));
+        }
+        if (sourceid == Corsair.BATTLE_SHIP) {
+            chr.announce(MaplePacketCreator.skillCooldown(5221999, chr.getBattleshipHp()));
+        }
     }
 
     public final void applyComboBuff(final MapleCharacter applyto, int combo) {
-	final List<Pair<MapleBuffStat, Integer>> stat = Collections.singletonList(new Pair<MapleBuffStat, Integer>(MapleBuffStat.ARAN_COMBO, combo));
-	applyto.getClient().getSession().write(MaplePacketCreator.giveBuff(sourceid, 99999, stat));
+        final List<Pair<MapleBuffStat, Integer>> stat = Collections.singletonList(new Pair<MapleBuffStat, Integer>(MapleBuffStat.ARAN_COMBO, combo));
+        applyto.getClient().getSession().write(MaplePacketCreator.giveBuff(sourceid, 99999, stat));
 
-	final long starttime = System.currentTimeMillis();
+        final long starttime = System.currentTimeMillis();
 //	final CancelEffectAction cancelAction = new CancelEffectAction(applyto, this, starttime);
 //	final ScheduledFuture<?> schedule = TimerManager.getInstance().schedule(cancelAction, ((starttime + 99999) - System.currentTimeMillis()));
-	applyto.registerEffect(this, starttime, null);
+        applyto.registerEffect(this, starttime, null);
     }
 
     private void applyBuffEffect(MapleCharacter applyfrom, MapleCharacter applyto, boolean primary) {
-        if (!isMonsterRiding()) applyto.cancelEffect(this, true, -1);
+        if (!isMonsterRiding()) {
+            applyto.cancelEffect(this, true, -1);
+        }
 
         List<Pair<MapleBuffStat, Integer>> localstatups = statups;
         int localDuration = duration;
@@ -880,7 +895,9 @@ public class MapleStatEffect {
         if (localstatups.size() > 0) {
             MaplePacket buff = null;
             MaplePacket mbuff = null;
-            if (getSummonMovementType() == null) buff = MaplePacketCreator.giveBuff((skill ? sourceid : -sourceid), localDuration, localstatups);
+            if (getSummonMovementType() == null) {
+                buff = MaplePacketCreator.giveBuff((skill ? sourceid : -sourceid), localDuration, localstatups);
+            }
             if (isDash()) {
                 buff = MaplePacketCreator.givePirateBuff(statups, sourceid, seconds);
                 mbuff = MaplePacketCreator.giveForeignDash(applyto.getId(), sourceid, seconds, localstatups);
@@ -897,7 +914,9 @@ public class MapleStatEffect {
                 mbuff = MaplePacketCreator.showMonsterRiding(applyto.getId(), givemount);
                 localDuration = duration;
                 if (sourceid == Corsair.BATTLE_SHIP) {//hp
-                    if (applyto.getBattleshipHp() == 0) applyto.resetBattleshipHp();
+                    if (applyto.getBattleshipHp() == 0) {
+                        applyto.resetBattleshipHp();
+                    }
                 }
             } else if (isShadowPartner()) {
                 List<Pair<MapleBuffStat, Integer>> stat = Collections.singletonList(new Pair<MapleBuffStat, Integer>(MapleBuffStat.SHADOWPARTNER, 0));
@@ -922,12 +941,16 @@ public class MapleStatEffect {
             ScheduledFuture<?> schedule = TimerManager.getInstance().schedule(cancelAction, localDuration);
             applyto.registerEffect(this, starttime, schedule);
 
-            if (buff != null)
+            if (buff != null) {
                 applyto.getClient().getSession().write(buff);
-            if (mbuff != null)
+            }
+            if (mbuff != null) {
                 applyto.getMap().broadcastMessage(applyto, mbuff, false);
-            if (sourceid == Corsair.BATTLE_SHIP) applyto.announce(MaplePacketCreator.skillCooldown(5221999, applyto.getBattleshipHp() / 10));
-        }         
+            }
+            if (sourceid == Corsair.BATTLE_SHIP) {
+                applyto.announce(MaplePacketCreator.skillCooldown(5221999, applyto.getBattleshipHp() / 10));
+            }
+        }
     }
 
     private int calcHPChange(MapleCharacter applyfrom, boolean primary) {
@@ -954,8 +977,10 @@ public class MapleStatEffect {
         }
         if (isChakra()) {
             hpchange += makeHealHP(getY() / 100.0, applyfrom.getTotalLuk(), 2.3, 3.5);
-        } else if (sourceid == SuperGM.HEAL_PLUS_DISPEL) hpchange += (applyfrom.getMaxHp() - applyfrom.getHp());
-        
+        } else if (sourceid == SuperGM.HEAL_PLUS_DISPEL) {
+            hpchange += (applyfrom.getMaxHp() - applyfrom.getHp());
+        }
+
         return hpchange;
     }
 
@@ -995,8 +1020,10 @@ public class MapleStatEffect {
                 }
             }
         }
-        if (sourceid == SuperGM.HEAL_PLUS_DISPEL) mpchange += (applyfrom.getMaxMp() - applyfrom.getMp());
-        
+        if (sourceid == SuperGM.HEAL_PLUS_DISPEL) {
+            mpchange += (applyfrom.getMaxMp() - applyfrom.getMp());
+        }
+
         return mpchange;
     }
 
@@ -1091,7 +1118,7 @@ public class MapleStatEffect {
     public boolean isRecovery() {
         return sourceid == Beginner.RECOVERY || sourceid == Noblesse.RECOVERY || sourceid == Legend.RECOVERY;
     }
-    
+
     private boolean isDs() {
         return skill && (sourceid == Rogue.DARK_SIGHT || sourceid == WindArcher.WIND_WALK || sourceid == NightWalker.DARK_SIGHT);
     }
@@ -1255,6 +1282,7 @@ public class MapleStatEffect {
     }
 
     private static class CancelEffectAction implements Runnable {
+
         private MapleStatEffect effect;
         private WeakReference<MapleCharacter> target;
         private long startTime;

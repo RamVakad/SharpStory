@@ -1,43 +1,96 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package constants;
 
 public class ServerConstants {
-    public static short VERSION = 83;
-    public static String[] WORLD_NAMES = {"Scania", "Bera", "Broa", "Windia", "Khaini", "Bellocan", "Mardia", "Kradia", "Yellonde", "Demethos", "Galicia", "El Nido", "Zenith", "Arcenia", "Kastia", "Judis", "Plana", "Kalluna", "Stius", "Croa", "Medere"};;
-    // Rate Configuration
+
+    //public static final int POTKEYS = 5; // I don't care about dynamic potkeys
+    public static final boolean MONSTER_CARDS = false;
+    
+    public static final short VERSION = 83;
+    public static final String[] WORLD_NAMES = {"Food", "Scania", "Bera", "Broa", "Windia", "Khaini", "Bellocan", "Mardia", "Kradia", "Yellonde", "Demethos", "Galicia", "El Nido", "Zenith", "Arcenia", "Kastia", "Judis", "Plana", "Kalluna", "Stius", "Croa", "Medere"};
+    // Quest Configuration
+    public static final boolean QUESTS = false;
     public static final byte QUEST_EXP_RATE = 4;
     public static final byte QUEST_MESO_RATE = 3;
     // Login Configuration
-    public static final int CHANNEL_LOAD = 150;//Players per channel
-    public static final long RANKING_INTERVAL = 3600000;
+    public static final int CHANNEL_LOAD = 50;//Players per channel // orly? i didnt know lols
+    //public static final long RANKING_INTERVAL = 3600000; //Not needed
     public static final boolean ENABLE_PIC = true;
     //Event Configuration
     public static final boolean PERFECT_PITCH = false;
-    public static final String EVENTS = "automsg KerningPQ Boats Subway AirPlane elevator";
+    public static final String EVENTS = "automsg Transfer event"; // KerningPQ Boats Subway AirPlane elevator
     // IP Configuration
-    public static final String HOST = "localhost";
+    public static final String HOST = "96.44.134.35";
+    //public static final String HOST = "192.168.2.2";
     //Database Configuration
-    public static final String DB_URL = "jdbc:mysql://localhost:3306/MoopleDEV?autoReconnect=true";
+    public static final String DB_URL = "jdbc:mysql://localhost:3306/SharpDEV?autoReconnect=true";
     public static final String DB_USER = "root";
     public static final String DB_PASS = "";
+    //AIO Shop Exceptions
+    public static final int[] AIO_EXCEPTIONS = {1003031, 1003032, 1003033, 1003034, 1003035,// Leaves, Crystals, etc
+        1032031, 1122011, 1122012, 1002776, 1002777, 1002778, 1002779, 1002780, 1002790, 1002791,//TIMELESS, REVERSE, WIZET, GM items
+        1002792, 1002793, 1002794, 1002940, 1002959, 1102172, 1082234, 1082235, 1082236, 1082237,
+        1082238, 1082239, 1082240, 1082241, 1082242, 1082243, 1050072, 1050073, 1050074, 1051056,
+        1051057, 1051058, 1052155, 1052156, 1052157, 1052158, 1052159, 1052160, 1052161, 1052162,
+        1052163, 1052164, 1092057, 1092058, 1092059, 1072177, 1072178, 1072179, 1072355, 1072356,
+        1072357, 1072358, 1072359, 1072361, 1072362, 1072363, 1072364, 1072365, 1302081, 1302086,
+        1312037, 1312038, 1322060, 1402046, 1412033, 1422037, 1442063, 1482023, 1322061, 1332073,
+        1332074, 1332075, 1332076, 1372044, 1372045, 1382057, 1382059, 1402047, 1412034, 1422038,
+        1432047, 1432049, 1442067, 1452057, 1452059, 1462050, 1462051, 1472068, 1472071, 1482024,
+        1492023, 1492025, 1302114, 1312044, 1322072, 1402061, 1412041, 1422044, 1482034, 1472063,
+        1002140, 1042003, 1062007, 1322013, 2101055, 2101056, 2101053, 2101054, 2101052, 1002562,//SUMMONING BAGS
+        2100008, 2100009, 2100010, 2100011, 2100012, 2100013, 2100015, 2100028, 2100029, 2100030,
+        2100031, 2100032, 2100037, 2100038, 2100039, 2100040, 2100041, 2100042, 2100043, 2100044,
+        2100045, 2100046, 2100047, 2100048, 2100049, 2100050, 2100051, 2100053, 2100054, 2100055,
+        2100056, 2100057, 2100058, 2100059, 2100063, 2100064, 2100065, 2100066, 2100068, 2100071,
+        2100072, 2101000, 2101001, 2101002, 2101003, 2101004, 2101005, 2101006, 2101007, 2101008,
+        2101009, 2101010, 2101011, 2101012, 2101013, 2101014, 2101015, 2101016, 2101017, 2101018,
+        2101019, 2101039, 2101130, 2101131, 2101137, 2101138, 2101139, 2101140, 2101141, 2101142,
+        2101143, 2101144, 2101145, 2101146, 2101147, 2101148, 2100073, 2100074, 2100075, 2100076,
+        2100077, 2100078, 2100079, 2100080, 2100081, 2100082, 2100083, 2100084, 2100085, 2100086,
+        2100087, 2100088, 2100089, 2100090, 2100091, 2100092, 2100093, 2100094, 2100095, 2100096,
+        2100097, 2100098, 2100099, 2100100, 2100101, 2100102, 2100103, 2100112, 2100116, 2100117,
+        2100119, 2100108, 2100109, 2100110, 2100111, 2100113, 2100120, 2100121, 2100122, 2100123,
+        2100124, 2100125, 2100126, 2100127, 2100128, 2100129, 2100130, 2100131, 2100132, 2100134,
+        2100135, 2100136, 2100138, 2100139, 2100140, 2101110, 2430011, 2101207, 2101208, 2101209,
+        2101210, 2101211, 2101212, 2101213, 2100160, 2100161, 2100162, 2100163, 2109006, 2109007,
+        2109008, 2109009, 2109010, 2100164, 2100165, 2100152, 2100153, 2100154, 2100155, 2100159,
+        2100155, 2100159, 2101050, 2101051, 2040603, 2044503, 2041024, 2041025, 2044703, 2044603,
+        2043303, 2040807, 2040806, 2040006, 2040007, 2043103, 2043203, 2043003, 2040506, 2044403,
+        2040903, 2040709, 2040710, 2040711, 2044303, 2043803, 2040403, 2044103, 2044203, 2044003,
+        2043703, 2340000, 2049003, 2049100, 1442057, 1122001, 1122002, 1122003, 1122004, 1102226,
+        1122006, 1122005, 1012070, 1012071, 1012072, 1012073, 1012076, 1012077, 1012078, 1102227,
+        1012079, 1002080, 1002081, 1002082, 1002083, 1002394, 1002395, 1002391, 1072012, 1002971,
+        1072054, 1072055, 1072056, 1082223, 1082230, 1102064, 2044713, 2044613, 2044513, 1102211,
+        2044420, 2044320, 2044220, 2044120, 2044028, 2043813, 2043713, 2043313, 2043220, 1092030,
+        2043120, 2043022, 2041068, 2041069, 2040943, 2040833, 2040834, 2040755, 2040756, 1302107,
+        2040757, 2040629, 2040542, 2040543, 2040429, 2040333, 2040045, 2040046, 2044817, 1302024,
+        2044910, 1122001, 1082149, 1082148, 1082147, 1082145, 1003026, 1003025, 1003024, 1302049,
+        1003023, 1102172, 1142100, 1032061, 1072344, 1022060, 1012108, 1142064, 1112401, 1302013,
+        1112000, 1012084, 1012106, 1012132, 1082146, 1082145, 1082146, 1082147, 1082148, 1302063,
+        1082149, 1003023, 1003025, 1142100, 1032061, 1072344, 1022060, 1012070, 1012071, 1302095,
+        1012072, 1012073, 1012076, 1012077, 1012078, 1012079, 1012084, 1012106, 1012132, 1302106,
+        1312012, 1442023, 1432015, 1432016, 1432017, 1432018, 1082228, 1002851, 1002418, 1002554,
+        1002584, 1002585, 1002586, 1002587, 1002677, 1002762, 1002763, 1002764, 1002765, 1002766
+    };
 }

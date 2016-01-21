@@ -23,20 +23,18 @@ package net.server;
 
 import java.io.File;
 import java.net.InetSocketAddress;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import client.MapleCharacter;
 import constants.ServerConstants;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
-import tools.DatabaseConnection;
 import net.MaplePacket;
 import net.MapleServerHandler;
 import net.PacketProcessor;
@@ -55,13 +53,15 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.SocketSessionConfig;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import server.events.gm.MapleEvent;
-import server.expeditions.MapleExpedition;
-import server.expeditions.MapleExpeditionType;
 import server.maps.HiredMerchant;
 import server.maps.MapleMap;
+import tools.Randomizer;
 
 public final class Channel {
-
+    
+    private Calendar lastEvent;
+    private boolean customevent = false;
+    private int customeventmap = 0;
     private int port = 7575;
     private PlayerStorage players = new PlayerStorage();
     private byte world, channel;
@@ -71,9 +71,9 @@ public final class Channel {
     private EventScriptManager eventSM;
     private Map<Integer, HiredMerchant> hiredMerchants = new HashMap<Integer, HiredMerchant>();
     private ReentrantReadWriteLock merchant_lock = new ReentrantReadWriteLock(true);
-    private EnumMap<MapleExpeditionType, MapleExpedition> expeditions = new EnumMap<MapleExpeditionType, MapleExpedition>(MapleExpeditionType.class);
     private MapleEvent event;
     private boolean finishedShutdown = false;
+    private int transrate;
 
     public Channel(final byte world, final byte channel) {
         this.world = world;
@@ -82,13 +82,6 @@ public final class Channel {
 
         try {
             eventSM = new EventScriptManager(this, ServerConstants.EVENTS.split(" "));
-            Connection c = DatabaseConnection.getConnection();
-            PreparedStatement ps = c.prepareStatement("UPDATE accounts SET loggedin = 0");
-            ps.executeUpdate();
-            ps.close();
-            ps = c.prepareStatement("UPDATE characters SET HasMerchant = 0");
-            ps.executeUpdate();
-            ps.close();
             port = 7575 + this.channel - 1;
             port += (world * 100);
             ip = ServerConstants.HOST + ":" + port;
@@ -101,8 +94,12 @@ public final class Channel {
             acceptor.getFilterChain().addLast("codec", (IoFilter) new ProtocolCodecFilter(new MapleCodecFactory()));
             acceptor.bind(new InetSocketAddress(port));
             ((SocketSessionConfig) acceptor.getSessionConfig()).setTcpNoDelay(true);
-
             eventSM.init();
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(0);
+            this.lastEvent = cal;
+            this.transrate = Randomizer.nextInt(1100000000 - 900000000) + 900000000;
+            System.out.println("Channel " + getId() + " Transfer Rate - " + transrate);
             System.out.println("    Channel " + getId() + ": Listening on port " + port);
         } catch (Exception e) {
             e.printStackTrace();
@@ -112,13 +109,11 @@ public final class Channel {
     public final void shutdown() {
         try {
             System.out.println("Shutting down Channel " + channel + " on World " + world);
-            
             closeAllMerchants();
             players.disconnectAll();
             acceptor.unbind();
-            
             finishedShutdown = true;
-            System.out.println("Successfully shut down Channel " + channel + " on World " + world + "\r\n");          
+            System.out.println("Successfully shut down Channel " + channel + " on World " + world + "\r\n");
         } catch (Exception e) {
             System.err.println("Error while shutting down Channel " + channel + " on World " + world + "\r\n" + e);
         }
@@ -138,7 +133,7 @@ public final class Channel {
             wlock.unlock();
         }
     }
-    
+
     public MapleMapFactory getMapFactory() {
         return mapFactory;
     }
@@ -260,12 +255,12 @@ public final class Channel {
     public void removeHiredMerchant(int chrid) {
         WriteLock wlock = merchant_lock.writeLock();
         wlock.lock();
-        try {        
+        try {
             hiredMerchants.remove(chrid);
         } finally {
             wlock.unlock();
         }
-        }
+    }
 
     public int[] multiBuddyFind(int charIdFrom, int[] characterIds) {
         List<Integer> ret = new ArrayList<Integer>(characterIds.length);
@@ -286,28 +281,58 @@ public final class Channel {
         return retArr;
     }
 
-    public boolean hasExpedition(MapleExpeditionType type) {
-        return expeditions.containsKey(type);
-    }
-
-    public void addExpedition(MapleExpeditionType type, MapleExpedition exped) {
-        expeditions.put(type, exped);
-    }
-
-    public MapleExpedition getExpedition(MapleExpeditionType type) {
-        return expeditions.get(type);
-    }
-
     public boolean isConnected(String name) {
         return getPlayerStorage().getCharacterByName(name) != null;
     }
-    
+
     public boolean finishedShutdown() {
         return finishedShutdown;
     }
-    
+
+    public void setRate(int n) {
+        transrate = n;
+    }
+
+    public void decRate(int n) {
+        transrate -= n;
+    }
+
+    public void incRate(int n) {
+        transrate += n;
+    }
+
+    public int getRate() {
+        return transrate;
+    }
+
     public void setServerMessage(String message) {
         this.serverMessage = message;
         broadcastPacket(MaplePacketCreator.serverMessage(message));
+    }
+
+    public void updateLastEvent() {
+        Server.getInstance().getWorld(getWorld()).clearEventParticipants();
+        this.lastEvent = Calendar.getInstance();
+        this.broadcastPacket(MaplePacketCreator.serverNotice(6, "[Sharp]:: An event has started, talk to the event NPC to participate!"));
+    }
+
+    public boolean isEventAvaliable() {
+        if (this.lastEvent.getTimeInMillis() + (1000 * 60) * 15 <= Calendar.getInstance().getTimeInMillis()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    public void setCustomEventStatus(boolean yesno) {
+        customevent = yesno;
+    }
+    public boolean getCustomEventStatus() {
+        return customevent;
+    }
+    public void setCustomEventMap(int mid) {
+        customeventmap = mid;
+    }
+    public int getCustomEventMap() {
+        return customeventmap;
     }
 }

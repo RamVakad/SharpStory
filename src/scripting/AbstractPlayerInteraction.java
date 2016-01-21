@@ -1,24 +1,24 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+This file is part of the OdinMS Maple Story Server
+Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+Matthias Butz <matze@odinms.de>
+Jan Christian Meyer <vimes@odinms.de>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation version 3 as published by
+the Free Software Foundation. You may not use, modify or distribute
+this program under any other version of the GNU Affero General Public
+License.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package scripting;
 
 import java.util.Arrays;
@@ -54,6 +54,7 @@ import server.quest.MapleQuest;
 import tools.MaplePacketCreator;
 
 public class AbstractPlayerInteraction {
+
     public MapleClient c;
 
     public AbstractPlayerInteraction(MapleClient c) {
@@ -118,13 +119,13 @@ public class AbstractPlayerInteraction {
 
     public void openNpc(int npcid) {
         NPCScriptManager.getInstance().dispose(c);
-        NPCScriptManager.getInstance().start(c, npcid, null, null);
+        NPCScriptManager.getInstance().start(c, npcid, null, null, true);
     }
 
     public void updateQuest(int questid, String status) {
-            c.announce(MaplePacketCreator.updateQuest((short) questid, status));
+        c.announce(MaplePacketCreator.updateQuest((short) questid, status));
     }
-    
+
     public MapleQuestStatus.Status getQuestStatus(int id) {
         return c.getPlayer().getQuest(MapleQuest.getInstance(id)).getStatus();
     }
@@ -153,34 +154,17 @@ public class AbstractPlayerInteraction {
         gainItem(id, quantity, false);
     }
 
+    public void gainItemBy10(int id, short quantity) {
+        quantity = (short) (quantity/10);
+        gainItem(id, quantity, false);
+    }
+
     public void gainItem(int id) {
         gainItem(id, (short) 1, false);
     }
 
     public void gainItem(int id, short quantity, boolean randomStats) {
-        if (id >= 5000000 && id <= 5000100) {
-            MapleInventoryManipulator.addById(c, id, (short) 1, null, MaplePet.createPet(id), -1);
-        }
-        if (quantity >= 0) {
-            MapleItemInformationProvider ii = MapleItemInformationProvider.getInstance();
-            IItem item = ii.getEquipById(id);
-            if (!MapleInventoryManipulator.checkSpace(c, id, quantity, "")) {
-                c.getPlayer().dropMessage(1, "Your inventory is full. Please remove an item from your " + ii.getInventoryType(id).name() + " inventory.");
-                return;
-            }
-            if (ii.getInventoryType(id).equals(MapleInventoryType.EQUIP) && !ItemConstants.isRechargable(item.getItemId())) {
-                if (randomStats) {
-                    MapleInventoryManipulator.addFromDrop(c, ii.randomizeStats((Equip) item), false);
-                } else {
-                    MapleInventoryManipulator.addFromDrop(c, (Equip) item, false);
-                }
-            } else {
-                MapleInventoryManipulator.addById(c, id, quantity);
-            }
-        } else {
-            MapleInventoryManipulator.removeById(c, MapleItemInformationProvider.getInstance().getInventoryType(id), id, -quantity, true, false);
-        }
-        c.announce(MaplePacketCreator.getShowItemGain(id, quantity, true));
+        c.getPlayer().gainItem(id, quantity, randomStats);
     }
 
     public void changeMusic(String songName) {
@@ -200,20 +184,20 @@ public class AbstractPlayerInteraction {
     }
 
     public void mapEffect(String path) {
-       c.announce(MaplePacketCreator.mapEffect(path));
+        c.announce(MaplePacketCreator.mapEffect(path));
     }
 
     public void mapSound(String path) {
-       c.announce(MaplePacketCreator.mapSound(path));
+        c.announce(MaplePacketCreator.mapSound(path));
     }
 
     public void showIntro(String path) {
-       c.announce(MaplePacketCreator.showIntro(path));
+        c.announce(MaplePacketCreator.showIntro(path));
     }
 
     public void showInfo(String path) {
-       c.announce(MaplePacketCreator.showInfo(path));
-       c.announce(MaplePacketCreator.enableActions());
+        c.announce(MaplePacketCreator.showInfo(path));
+        c.announce(MaplePacketCreator.enableActions());
     }
 
     public void guildMessage(int type, String message) {
@@ -318,29 +302,29 @@ public class AbstractPlayerInteraction {
 
     public void giveTutorialSkills() {
         if (getPlayer().getMapId() == 914000100) {
-        ISkill skill = SkillFactory.getSkill(20000018);
-        ISkill skill0 = SkillFactory.getSkill(20000017);
-        getPlayer().changeSkillLevel(skill, (byte) 1, 1, -1);
-        getPlayer().changeSkillLevel(skill0, (byte) 1, 1, -1);
+            ISkill skill = SkillFactory.getSkill(20000018);
+            ISkill skill0 = SkillFactory.getSkill(20000017);
+            getPlayer().changeSkillLevel(skill, (byte) 1, 1, -1);
+            getPlayer().changeSkillLevel(skill0, (byte) 1, 1, -1);
         } else if (getPlayer().getMapId() == 914000200) {
-        ISkill skill = SkillFactory.getSkill(20000015);
-        ISkill skill0 = SkillFactory.getSkill(20000014);
-        getPlayer().changeSkillLevel(skill, (byte) 1, 1, -1);
-        getPlayer().changeSkillLevel(skill0, (byte) 1, 1, -1);
+            ISkill skill = SkillFactory.getSkill(20000015);
+            ISkill skill0 = SkillFactory.getSkill(20000014);
+            getPlayer().changeSkillLevel(skill, (byte) 1, 1, -1);
+            getPlayer().changeSkillLevel(skill0, (byte) 1, 1, -1);
         } else if (getPlayer().getMapId() == 914000210) {
-        ISkill skill = SkillFactory.getSkill(20000016);
-        getPlayer().changeSkillLevel(skill, (byte) 1, 1, -1);
+            ISkill skill = SkillFactory.getSkill(20000016);
+            getPlayer().changeSkillLevel(skill, (byte) 1, 1, -1);
         }
     }
 
-     public void removeAranPoleArm() {
+    public void removeAranPoleArm() {
         IItem tempItem = c.getPlayer().getInventory(MapleInventoryType.EQUIPPED).getItem((byte) -11);
-	MapleInventoryManipulator.removeFromSlot(c.getPlayer().getClient(), MapleInventoryType.EQUIPPED, (byte) -11, tempItem.getQuantity(), false, true);
-       }
+        MapleInventoryManipulator.removeFromSlot(c.getPlayer().getClient(), MapleInventoryType.EQUIPPED, (byte) -11, tempItem.getQuantity(), false, true);
+    }
 
     public void spawnMonster(int id, int x, int y) {
         MapleMonster monster = MapleLifeFactory.getMonster(id);
-        monster.setPosition(new Point(x,y));
+        monster.setPosition(new Point(x, y));
         getPlayer().getMap().spawnMonster(monster);
     }
 
@@ -353,44 +337,44 @@ public class AbstractPlayerInteraction {
     }
 
     public void displayGuide(int num) {
-       c.announce(MaplePacketCreator.showInfo("UI/tutorial.img/" + num));
+        c.announce(MaplePacketCreator.showInfo("UI/tutorial.img/" + num));
     }
 
     public void talkGuide(String message) {
-       c.announce(MaplePacketCreator.talkGuide(message));
+        c.announce(MaplePacketCreator.talkGuide(message));
     }
 
     public void guideHint(int hint) {
-       c.announce(MaplePacketCreator.guideHint(hint));
+        c.announce(MaplePacketCreator.guideHint(hint));
     }
 
     public void updateAranIntroState(String mode) {
-       c.getPlayer().addAreaData(21002, mode);
-       c.announce(MaplePacketCreator.updateAreaInfo(mode, 21002));
+        c.getPlayer().addAreaData(21002, mode);
+        c.announce(MaplePacketCreator.updateAreaInfo(mode, 21002));
     }
 
     public void updateAranIntroState2(String mode) {
-       c.getPlayer().addAreaData(21019, mode);
-       c.announce(MaplePacketCreator.updateAreaInfo(mode, 21019));
+        c.getPlayer().addAreaData(21019, mode);
+        c.announce(MaplePacketCreator.updateAreaInfo(mode, 21019));
     }
 
     public boolean getAranIntroState(String mode) {
-       if (c.getPlayer().area_data.contains(mode)) {
-           return true;
-       }
-       return false;
+        if (c.getPlayer().area_data.contains(mode)) {
+            return true;
+        }
+        return false;
     }
 
     public void updateCygnusIntroState(String mode) {
-       c.getPlayer().addAreaData(20021, mode);
-       c.announce(MaplePacketCreator.updateAreaInfo(mode, 20021));
+        c.getPlayer().addAreaData(20021, mode);
+        c.announce(MaplePacketCreator.updateAreaInfo(mode, 20021));
     }
 
     public boolean getCygnusIntroState(String mode) {
-       if (c.getPlayer().area_data.contains(mode)) {
-           return true;
-       }
-       return false;
+        if (c.getPlayer().area_data.contains(mode)) {
+            return true;
+        }
+        return false;
     }
 
     public MobSkill getMobSkill(int skill, int level) {
@@ -411,12 +395,12 @@ public class AbstractPlayerInteraction {
 
     public void lockUI() {
         c.announce(MaplePacketCreator.disableUI(true));
-	c.announce(MaplePacketCreator.lockUI(true));
+        c.announce(MaplePacketCreator.lockUI(true));
     }
 
     public void unlockUI() {
         c.announce(MaplePacketCreator.disableUI(false));
-	c.announce(MaplePacketCreator.lockUI(false));
+        c.announce(MaplePacketCreator.lockUI(false));
     }
 
     public void environmentChange(String env, int mode) {
@@ -425,5 +409,29 @@ public class AbstractPlayerInteraction {
 
     public Pyramid getPyramid() {
         return (Pyramid) getPlayer().getPartyQuest();
+    }
+    
+    public void gainEqWithStats(int id, int wa, int matt, int str, int dex, int int_, int luk, int line1, int line2, int line3) {
+        MapleItemInformationProvider ii = MapleItemInformationProvider.getInstance();
+        IItem item = ii.getEquipById(id);
+        if (!MapleInventoryManipulator.checkSpace(c, id, 1, "")) {
+            c.getPlayer().dropMessage(1, "Your inventory is full. You will not be refunded.");
+            return;
+        } else if (ii.getInventoryType(id).equals(MapleInventoryType.EQUIP) && !ItemConstants.isRechargable(item.getItemId())) {
+            MapleInventoryManipulator.addFromDrop(c, ii.setStats((Equip) item, wa, matt, str, dex, int_, luk, line1, line2, line3), true);
+        }
+        c.announce(MaplePacketCreator.getShowItemGain(id, (short) 1, true));
+    }
+
+    public void gainFromAuction(int id, int str, int dex, int int_, int luk, int hp, int mp, int watk, int matk, int wdef, int mdef, int acc, int avoid, int hands, int speed, int jump, int vicious, int itemlevel, int itemexp, int ringid, int upgradeslots, int line1, int line2, int line3) {
+        MapleItemInformationProvider ii = MapleItemInformationProvider.getInstance();
+        IItem item = ii.getEquipById(id);
+        if (!MapleInventoryManipulator.checkSpace(c, id, 1, "")) {
+            c.getPlayer().dropMessage(1, "Your inventory is full. You will not be refunded.");
+            return;
+        } else if (ii.getInventoryType(id).equals(MapleInventoryType.EQUIP) && !ItemConstants.isRechargable(item.getItemId())) {
+            MapleInventoryManipulator.addFromDrop(c, ii.setAuctionStats((Equip) item, str, dex, int_, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, vicious, itemlevel, itemexp, ringid, upgradeslots, line1, line2, line3), true);
+        }
+        c.announce(MaplePacketCreator.getShowItemGain(id, (short) 1, true));
     }
 }

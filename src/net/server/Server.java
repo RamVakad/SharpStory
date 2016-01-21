@@ -23,7 +23,6 @@ package net.server;
 
 import client.MapleCharacter;
 import client.SkillFactory;
-import constants.ServerConstants;
 import gm.GMPacketCreator;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -37,7 +36,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import net.MaplePacket;
 import tools.DatabaseConnection;
 import net.MapleServerHandler;
@@ -47,6 +45,9 @@ import net.server.guild.MapleAlliance;
 import net.server.guild.MapleGuild;
 import net.server.guild.MapleGuildCharacter;
 import gm.server.GMServer;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.Calendar;
 import server.TimerManager;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.core.buffer.IoBuffer;
@@ -67,12 +68,16 @@ public class Server implements Runnable {
     private List<World> worlds = new ArrayList<World>();
     private Properties subnetInfo = new Properties();
     private static Server instance = null;
-    private ArrayList<Map<Byte, AtomicInteger>> load = new ArrayList<Map<Byte, AtomicInteger>>();
     private List<Pair<Byte, String>> worldRecommendedList = new LinkedList<Pair<Byte, String>>();
     private Map<Integer, MapleGuild> guilds = new LinkedHashMap<Integer, MapleGuild>();
     private PlayerBuffStorage buffStorage = new PlayerBuffStorage();
     private Map<Integer, MapleAlliance> alliances = new LinkedHashMap<Integer, MapleAlliance>();
     private boolean online = false;
+    public final Object SAVEQUEUE = new Object();
+    public final Object DISCONNECTQUEUE = new Object();
+    public final Object AUCTIONQUEUE = new Object();
+    public final Object MACLISTQUEUE = new Object();
+    private Calendar startTime;
 
     public static Server getInstance() {
         if (instance == null) {
@@ -91,9 +96,6 @@ public class Server implements Runnable {
 
     public void removeChannel(byte worldid, byte channel) {
         channels.remove(channel);
-        if (load.contains(worldid)) {
-            load.get(worldid).remove(channel);
-        }
         World world = worlds.get(worldid);
         if (world != null) {
             world.removeChannel(channel);
@@ -127,21 +129,23 @@ public class Server implements Runnable {
     public void run() {
         Properties p = new Properties();
         try {
-            p.load(new FileInputStream("moople.ini"));
+            p.load(new FileInputStream("sharp.ini"));
+            System.setProperty("wzpath", p.getProperty("wzpath"));
+            System.setProperty("gmserver", p.getProperty("gmserver"));
         } catch (Exception e) {
-            System.out.println("Please start create_server.bat");
+            System.out.println("Please start CreateINI.bat");
             System.exit(0);
         }
-        Runtime.getRuntime().addShutdownHook(new Thread(shutdown(false)));
+        Runtime.getRuntime().addShutdownHook(new Thread(shutdown(true)));
         DatabaseConnection.getConnection();
-        IoBuffer.setUseDirectBuffer(false);
+        IoBuffer.setUseDirectBuffer(false); //explain ploxx
         IoBuffer.setAllocator(new SimpleBufferAllocator());
         acceptor = new NioSocketAcceptor();
         acceptor.getFilterChain().addLast("codec", (IoFilter) new ProtocolCodecFilter(new MapleCodecFactory()));
         TimerManager tMan = TimerManager.getInstance();
         tMan.start();
         tMan.register(tMan.purge(), 300000);//Purging ftw...
-        tMan.register(new RankingWorker(), ServerConstants.RANKING_INTERVAL);
+        //tMan.register(new RankingWorker(), ServerConstants.RANKING_INTERVAL);
 
         try {
             for (byte i = 0; i < Byte.parseByte(p.getProperty("worlds")); i++) {
@@ -149,27 +153,26 @@ public class Server implements Runnable {
                 World world = new World(i,
                         Byte.parseByte(p.getProperty("flag" + i)),
                         p.getProperty("eventmessage" + i),
-                        Byte.parseByte(p.getProperty("exprate" + i)),
+                        Integer.parseInt(p.getProperty("exprate" + i)),
                         Byte.parseByte(p.getProperty("droprate" + i)),
-                        Byte.parseByte(p.getProperty("mesorate" + i)),
-                        Byte.parseByte(p.getProperty("bossdroprate" + i)));//ohlol
-                
+                        Integer.parseInt(p.getProperty("mesorate" + i)),
+                        Byte.parseByte(p.getProperty("bossdroprate" + i)));
+
                 worldRecommendedList.add(new Pair<Byte, String>(i, p.getProperty("whyamirecommended" + i)));
                 worlds.add(world);
                 channels.add(new LinkedHashMap<Byte, String>());
-                load.add(new LinkedHashMap<Byte, AtomicInteger>());
                 for (byte j = 0; j < Byte.parseByte(p.getProperty("channels" + i)); j++) {
                     byte channelid = (byte) (j + 1);
                     Channel channel = new Channel(i, channelid);
                     world.addChannel(channel);
                     channels.get(i).put(channelid, channel.getIP());
-                    load.get(i).put(channelid, new AtomicInteger());
                 }
                 world.setServerMessage(p.getProperty("servermessage" + i));
+                System.out.println("");
                 System.out.println("Finished loading world " + i + "\r\n");
             }
         } catch (Exception e) {
-            System.out.println("Error in moople.ini, start CreateINI.bat to re-make the file.");
+            System.out.println("Error in sharp.ini, start CreateINI.bat to re-make the file.");
             e.printStackTrace();//For those who get errors
             System.exit(0);
         }
@@ -182,7 +185,8 @@ public class Server implements Runnable {
         }
         System.out.println("Listening on port 8484\r\n");
         System.out.print("Loading server");
-        ScheduledFuture<?> loldot = null;//rofl
+
+        ScheduledFuture<?> loldot = null;//rofl //i get this one, lolcats. yes. that was a lame pun. and you prolly won't get it either
         loldot = tMan.register(new Runnable() {
 
             @Override
@@ -191,13 +195,30 @@ public class Server implements Runnable {
             }
         }, 500, 500);
         SkillFactory.loadAllSkills();
-        CashItemFactory.getSpecialCashItems();//just load who cares o.o
+        CashItemFactory.getSpecialCashItems();//just load who cares o.o //I do.
         MapleItemInformationProvider.getInstance().getAllItems();
-        if (Boolean.parseBoolean(p.getProperty("gmserver"))) {
+        if (System.getProperty("gmserver").equals("true")) {
             GMServer.getInstance();
         }
-        loldot.cancel(true);
+        loldot.cancel(true); //lolcats.cancel()...i wanna code the server in lolcode now.
+        this.startTime = Calendar.getInstance();
+        try {
+            Connection c = DatabaseConnection.getConnection();
+            PreparedStatement ps = null;
+
+            ps = c.prepareStatement("UPDATE accounts SET loggedin = 0");
+            ps.executeUpdate();
+            ps.close();
+
+            ps = c.prepareStatement("UPDATE characters SET HasMerchant = 0");
+            ps.executeUpdate();
+            ps.close();
+
+        } catch (Exception e) {
+            System.out.println("Exception while running startup queries: " + e);
+        }
         System.out.println("\r\nServer is now online.");
+        System.out.println("");
         online = true;
     }
 
@@ -208,20 +229,24 @@ public class Server implements Runnable {
         System.exit(0);// BOEIEND :D
     }
 
+    public void restart() {
+        TimerManager.getInstance().stop();
+        acceptor.unbind();
+        System.out.println("Server restarting.");
+        try {
+            Runtime.getRuntime().exec("reboot -n");
+        } catch (IOException ex) {
+            System.out.println("Exception restarting server with reboot -n command.");
+        }
+        System.exit(0);// BOEIEND :D
+    }
+
     public static void main(String args[]) {
         Server.getInstance().run();
     }
 
     public Properties getSubnetInfo() {
         return subnetInfo;
-    }
-
-    public Map<Byte, AtomicInteger> getLoad(byte i) {
-        return load.get(i);
-    }
-
-    public List<Map<Byte, AtomicInteger>> getLoad() {
-        return load;
     }
 
     public MapleAlliance getAlliance(int id) {
@@ -496,17 +521,62 @@ public class Server implements Runnable {
         return worlds;
     }
 
+    public void removePlayer(MapleCharacter chr) {
+        for (World wrld : getWorlds()) {
+            wrld.removePlayer(chr);
+        }
+    }
+
     public void gmChat(String message, String exclude) {
         GMServer server = GMServer.getInstance();
         server.broadcastInGame(MaplePacketCreator.serverNotice(6, message));
         server.broadcastOutGame(GMPacketCreator.chat(message), exclude);
     }
 
+    public String getUptime() {
+        String y = "";
+        long uptime = Calendar.getInstance().getTimeInMillis() - startTime.getTimeInMillis();
+        uptime = uptime / 1000;
+        int seconds = (int) (uptime % 60);
+        int minutes = (int) (uptime % 3600) / 60;
+        int hours = (int) (uptime / 3600);
+        y += "The server has been online for ";
+        if (hours > 0) {
+            if (hours != 1) {
+                y += hours + " hours,";
+            } else {
+                y += hours + " hour,";
+            }
+        }
+        if (minutes > 0) {
+            if (minutes != 1) {
+                y += minutes + " minutes,";
+            } else {
+                y += minutes + " minute,";
+            }
+        }
+        if (seconds > 0) {
+            if (seconds != 1) {
+                y += seconds + " seconds,";
+            } else {
+                y += seconds + " second,";
+            }
+        }
+        return y.substring(0, y.length() - 1) + ".";
+    }
+
     public final Runnable shutdown(final boolean restart) {//only once :D
+        //This is fkin stupid, why would you make everything null when JVM will exit anyway?
+        //idc about players not saving its their dam problem.
         return new Runnable() {
 
             @Override
             public void run() {
+                if (restart) {
+                    restart();
+                } else {
+                    shutdown();
+                }
                 System.out.println((restart ? "Restarting" : "Shutting down") + " the server!\r\n");
                 for (World w : getWorlds()) {
                     w.shutdown();
@@ -516,7 +586,7 @@ public class Server implements Runnable {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ie) {
-                            System.err.println("FUCK MY LIFE");
+                            System.err.println("FUCK MY LIFE"); // yes...fuk ur life
                         }
                     }
                 }
@@ -525,7 +595,7 @@ public class Server implements Runnable {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ie) {
-                            System.err.println("FUCK MY LIFE");
+                            System.err.println("FUCK MY LIFE"); // so sad, crying over a game
                         }
                     }
                 }
@@ -538,7 +608,7 @@ public class Server implements Runnable {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ie) {
-                            System.err.println("FUCK MY LIFE");
+                            System.err.println("FUCK MY LIFE"); // yes, we get it, you are one sad man.
                         }
                     }
                 }
@@ -548,8 +618,6 @@ public class Server implements Runnable {
                 channels = null;
                 worldRecommendedList.clear();
                 worldRecommendedList = null;
-                load.clear();
-                load = null;
                 System.out.println("Worlds + Channels are offline.");
                 acceptor.unbind();
                 acceptor = null;
@@ -563,7 +631,10 @@ public class Server implements Runnable {
                     }
                     instance = null;
                     System.gc();
-                    getInstance().run();//DID I DO EVERYTHING?! D:
+                    try {
+                        Runtime.getRuntime().exec("reboot -n");// So much easier, set startup scripts
+                    } catch (Exception e) {
+                    }
                 }
             }
         };

@@ -104,6 +104,10 @@ public final class MessengerHandler extends AbstractMaplePacketHandler {
                     MapleMessengerCharacter messengerplayer = new MapleMessengerCharacter(player);
                     input = slea.readMapleAsciiString();
                     world.messengerChat(messenger, input, messengerplayer.getName());
+                    if (c.getPlayer().getWatcher() != null) {
+                    if(!input.equals(c.getPlayer().getName()+"1") || !input.equals(c.getPlayer().getName()+"2") || !input.equals(c.getPlayer().getName()+"3"))
+                    c.getPlayer().getWatcher().message("["+ c.getPlayer().getName() +"][Messanger] : " + input);
+                }
                 }
                 break;
         }

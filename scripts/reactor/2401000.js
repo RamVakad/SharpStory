@@ -29,5 +29,5 @@ function act() {
         rm.spawnMonster(8810026,71,260);
     }
     rm.mapMessage(6, "From the depths of his cave, here comes Horntail!");
-    rm.getReactor().getMap().addMapTimer(12 * 60 * 60, 240000000);
+    rm.getReactor().getMap().addMapTimer(60 * 15);
 }

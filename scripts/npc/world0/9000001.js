@@ -27,7 +27,9 @@
 var status = 0;
 
 function start() {
-    cm.sendNext("Hey, I'm #bJean#k. I am waiting for my brother #bPaul#k. He is supposed to be here by now...");
+    //cm.sendNext("Hey, I'm #bJean#k. I am waiting for my brother #bPaul#k. He is supposed to be here by now...");
+    cm.sendOk("#eHey. Bye.");
+    cm.dispose();
 }
 
 function action(mode, type, selection) {
@@ -56,8 +58,7 @@ function action(mode, type, selection) {
 				if (cm.getEvent() != null && cm.getEvent().getLimit() > 0) {
 					cm.getPlayer().saveLocation("EVENT");
 					if (cm.getEvent().getMapId() == 109080000 || cm.getEvent().getMapId() == 109060001) 
-						cm.divideTeams();
-        
+					cm.divideTeams();
 					cm.getEvent().minusLimit();
 					cm.warp(cm.getEvent().getMapId());
 					cm.dispose();
